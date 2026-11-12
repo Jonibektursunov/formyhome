@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JoniFoot — Тактический Футбольный Драфт</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-gold: #fbbf24;
+            --neon-cyan: #22d3ee;
+            --neon-purple: #a855f7;
+            --neon-emerald: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #07090e;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(34, 211, 238, 0.1) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, #0b101b 0%, #05070a 100%);
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-display {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.92));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px) scale(1.01);
+            border-color: rgba(34, 211, 238, 0.5);
+            box-shadow: 0 8px 20px -5px rgba(34, 211, 238, 0.25);
+        }
+
+        /* Tier Card Borders & Glows */
+        .tier-icon {
+            background: linear-gradient(145deg, rgba(66, 48, 12, 0.92), rgba(28, 20, 6, 0.96));
+            border: 1.5px solid #fbbf24;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.35), inset 0 0 12px rgba(251, 191, 36, 0.2);
+        }
+        .tier-icon .ovr-badge { color: #fde047; text-shadow: 0 0 8px rgba(251, 191, 36, 0.8); }
+
+        .tier-elite {
+            background: linear-gradient(145deg, rgba(22, 46, 68, 0.92), rgba(13, 25, 42, 0.96));
+            border: 1.5px solid #22d3ee;
+            box-shadow: 0 0 12px rgba(34, 211, 238, 0.25), inset 0 0 10px rgba(168, 85, 247, 0.15);
+        }
+        .tier-elite .ovr-badge { color: #67e8f9; text-shadow: 0 0 8px rgba(34, 211, 238, 0.7); }
+
+        .tier-rare {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.88), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+        .tier-rare .ovr-badge { color: #e2e8f0; }
+
+        /* Football Pitch */
+        .football-pitch {
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(16, 185, 129, 0.06) 0px,
+                    rgba(16, 185, 129, 0.06) 40px,
+                    rgba(6, 78, 59, 0.14) 40px,
+                    rgba(6, 78, 59, 0.14) 80px
+                ),
+                radial-gradient(ellipse at center, #0c4a38 0%, #05261c 75%, #031711 100%);
+            border: 2px solid rgba(52, 211, 153, 0.45);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.18), inset 0 0 50px rgba(0, 0, 0, 0.65);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pitch-line {
+            border-color: rgba(110, 231, 183, 0.35);
+            box-shadow: 0 0 8px rgba(52, 211, 153, 0.25);
+            pointer-events: none;
+        }
+
+        /* Pitch Slot States */
+        .pitch-slot {
+            transition: all 0.22s ease;
+        }
+        .pitch-slot.drag-over {
+            transform: translate(-50%, -50%) scale(1.15) !important;
+            filter: brightness(1.3);
+        }
+        .pitch-slot.selected-slot {
+            box-shadow: 0 0 0 3px #22d3ee, 0 0 20px #22d3ee;
+            border-radius: 14px;
+        }
+
+        /* Chemistry Highlights */
+        .chem-perfect {
+            border: 2px solid #10b981 !important;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.65) !important;
+        }
+        .chem-partial {
+            border: 2px solid #f59e0b !important;
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.55) !important;
+        }
+        .chem-out {
+            border: 2px solid #ef4444 !important;
+            box-shadow: 0 0 14px rgba(239, 68, 68, 0.6) !important;
+        }
+
+        /* Flash Animation on Top Pick */
+        @keyframes cardFlash {
+            0% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(2.2); box-shadow: 0 0 35px #fbbf24; }
+            60% { transform: translate(-50%, -50%) scale(1.08); filter: brightness(1.3); }
+            100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+        }
+        .animate-flash {
+            animation: cardFlash 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.35); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(52, 211, 153, 0.65); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-emerald-500/20 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <svg class="w-6 h-6 text-slate-950" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 3.3l3.3 2.4-1.26 3.88H8.96L7.7 7.7 11 5.3h2zm-6.1 6.45l1.95 1.42-1.2 3.7-2.67-1.94c-.05-.51-.08-1.03-.08-1.56 0-.55.04-1.09.1-1.62h1.9zm3.15 5.63h3.9l1.2 3.7c-.98.27-2.01.42-3.15.42s-2.17-.15-3.15-.42l1.2-3.7zm6.1-1.93l-1.2-3.7 1.95-1.42h1.9c.06.53.1 1.07.1 1.62 0 .53-.03 1.05-.08 1.56l-2.67 1.94z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-display text-xl sm:text-2xl font-black tracking-wider bg-gradient-to-r from-emerald-300 via-cyan-300 to-amber-300 bg-clip-text text-transparent">
+                        JONIFOOT
+                    </h1>
+                    <p class="text-[11px] text-slate-400 font-medium tracking-wide uppercase">Tactical Draft Simulator</p>
+                </div>
+            </div>
+
+            <!-- Active Mode Badge & Controls -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div id="header-mode-badge" class="hidden items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-cyan-500/30 text-xs font-semibold text-cyan-300">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                    <span id="header-mode-text">Режим ИИ</span>
+                </div>
+
+                <button id="sound-toggle-btn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 transition" title="Звуковые эффекты">
+                    <svg id="sound-icon-on" class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                    </svg>
+                    <svg id="sound-icon-off" class="w-5 h-5 text-rose-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                    </svg>
+                </button>
+
+                <button id="home-btn" onclick="goHome()" class="hidden px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/60 text-xs sm:text-sm font-semibold text-slate-200 transition">
+                    В меню
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Custom Toast Notification (No alert() used) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-6">
+
+        <!-- ==================== 1. HOME SCREEN ==================== -->
+        <section id="screen-home" class="flex flex-col items-center justify-center min-h-[78vh] text-center">
+            <div class="inline-flex flex-wrap justify-center items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-5">
+                <span>⚡ 200 ТОП-ФУТБОЛИСТОВ</span>
+                <span>•</span>
+                <span>💰 БЮДЖЕТ €650M</span>
+                <span>•</span>
+                <span>5 ТАКТИЧЕСКИХ СХЕМ</span>
+                <span>•</span>
+                <span>ОНЛАЙН 1 НА 1</span>
+            </div>
+
+            <h2 class="font-display text-4xl sm:text-6xl font-black tracking-tight mb-4 leading-tight">
+                Собери дрим-тим в <br>
+                <span class="bg-gradient-to-r from-emerald-400 via-cyan-300 to-amber-300 bg-clip-text text-transparent">JoniFoot</span>
+            </h2>
+            <p class="text-slate-300 max-w-2xl text-sm sm:text-base mb-10 leading-relaxed">
+                У тебя есть трансферный бюджет <span class="text-amber-300 font-bold">€650M</span>. Выбирай из 200 звезд мирового футбола, укладывайся в лимит, подбирай идеальную схему и проверяй процент победы против ИИ или друга онлайн!
+            </p>
+
+            <!-- Mode Selection Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+                
+                <!-- Mode 1: PvE vs AI -->
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 text-left border border-emerald-500/25 hover:border-emerald-400/60 transition-all flex flex-col justify-between relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition"></div>
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-3xl mb-5">
+                            🤖
+                        </div>
+                        <h3 class="font-display text-2xl font-bold text-white mb-2">Против ИИ</h3>
+                        <p class="text-slate-400 text-sm mb-6">
+                            Сразись с тактическим искусственным интеллектом. Выбери уровень сложности бота — у каждого свой бюджет и стиль игры.
+                        </p>
+
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Уровень сложности ИИ:</label>
+                        <div class="grid grid-cols-3 gap-2 mb-6" id="ai-difficulty-selector">
+                            <button type="button" onclick="selectAIDifficulty('rookie')" data-diff="rookie" class="diff-btn py-2.5 px-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-emerald-400 transition">
+                                🌱 Новичок
+                            </button>
+                            <button type="button" onclick="selectAIDifficulty('pro')" data-diff="pro" class="diff-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-500/10 transition">
+                                🔥 Профи
+                            </button>
+                            <button type="button" onclick="selectAIDifficulty('legend')" data-diff="legend" class="diff-btn py-2.5 px-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-amber-400 transition">
+                                👑 Легенда
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="startAIMode()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-base tracking-wide shadow-lg shadow-emerald-500/25 transition transform active:scale-95">
+                        ИГРАТЬ ПРОТИВ ИИ →
+                    </button>
+                </div>
+
+                <!-- Mode 2: PvP Online 1v1 -->
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 text-left border border-cyan-500/25 hover:border-cyan-400/60 transition-all flex flex-col justify-between relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition"></div>
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-3xl mb-5">
+                            ⚔️
+                        </div>
+                        <h3 class="font-display text-2xl font-bold text-white mb-2">Онлайн 1 на 1</h3>
+                        <p class="text-slate-400 text-sm mb-5">
+                            Создай приватную комнату с 4-значным кодом или подключись к другу в реальном времени при равном бюджете €650M!
+                        </p>
+
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Твое имя тренера:</label>
+                            <input id="player-nickname-input" type="text" maxlength="16" placeholder="Например: Coach Joni" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:outline-none text-sm text-white font-medium">
+                        </div>
+
+                        <div class="flex gap-2 mb-6">
+                            <input id="join-room-code-input" type="text" maxlength="4" inputmode="numeric" placeholder="Код (4 цифры)" class="w-1/2 px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:outline-none text-sm text-center font-display tracking-widest text-cyan-300 font-bold">
+                            <button onclick="joinOnlineRoom()" class="w-1/2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-500/40 text-cyan-300 font-bold text-xs sm:text-sm transition">
+                                Войти по коду
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="createOnlineRoom()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-extrabold text-base tracking-wide shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
+                        СОЗДАТЬ КОМНАТУ 1 НА 1
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Rock-Paper-Scissors Tactical Hint -->
+            <div class="mt-8 glass-panel rounded-2xl px-5 py-3.5 max-w-3xl border border-slate-700/60 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-300">
+                <span class="font-bold text-amber-400">💡 Тактический баланс схем:</span>
+                <span>4-3-3 бьет 4-4-2 (+5%)</span>
+                <span class="text-slate-600">•</span>
+                <span>4-4-2 бьет 3-5-2 (+5%)</span>
+                <span class="text-slate-600">•</span>
+                <span>3-5-2 бьет 4-3-3 (+5%)</span>
+                <span class="text-slate-600">•</span>
+                <span>4-2-3-1 и 5-3-2 дают бонус защиты/контроля</span>
+            </div>
+        </section>
+
+        <!-- ==================== 2. DRAFT BUILDER SCREEN ==================== -->
+        <section id="screen-draft" class="hidden space-y-5">
+            
+            <!-- Online Room Status Banner (Visible only in PvP) -->
+            <div id="online-room-banner" class="hidden glass-panel rounded-2xl p-4 border border-cyan-400/40 bg-gradient-to-r from-cyan-950/50 via-slate-900/80 to-purple-950/50 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="px-4 py-2 rounded-xl bg-slate-950/80 border border-cyan-400/50 text-center">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400">Код комнаты</div>
+                        <div class="flex items-center gap-2">
+                            <span id="room-code-display" class="font-display text-2xl font-black text-cyan-300 tracking-widest">0000</span>
+                            <button onclick="copyRoomCode()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs" title="Скопировать код">
+                                📋
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">Соперник в комнате:</div>
+                        <div id="opponent-status-display" class="text-sm sm:text-base font-bold text-amber-300 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            Ожидание подключения второго игрока...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div id="my-ready-badge" class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-600 text-xs font-semibold text-slate-300">
+                        Твой статус: Сбор состава
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Team Stats & Tactics Bar -->
+            <div class="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+                
+                <!-- Formation Selector -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Схема:</span>
+                    <div id="formation-buttons" class="flex flex-wrap gap-1.5">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Live Team Metrics -->
+                <div class="flex flex-wrap items-center gap-2.5 sm:gap-3.5">
+                    <!-- Transfer Budget Indicator -->
+                    <div id="budget-box" class="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-amber-400/40 min-w-[155px] sm:min-w-[180px] transition-all">
+                        <div class="flex items-center justify-between text-[10px] uppercase text-slate-400 mb-0.5">
+                            <span>Бюджет</span>
+                            <span id="stat-budget-total" class="text-slate-500 font-bold">/ €650M</span>
+                        </div>
+                        <div class="flex items-baseline justify-between gap-2">
+                            <span id="stat-budget-left" class="font-display text-sm sm:text-base font-black text-emerald-400">€650M</span>
+                            <span id="stat-budget-spent" class="text-[10px] font-semibold text-slate-400">потрачено €0M</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden mt-1">
+                            <div id="budget-progress-bar" class="h-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-center">
+                        <div class="text-[10px] uppercase text-slate-400">Игроков</div>
+                        <div id="stat-count" class="font-display text-sm sm:text-base font-bold text-white">0 / 11</div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 text-center">
+                        <div class="text-[10px] uppercase text-slate-400">OVR</div>
+                        <div id="stat-ovr" class="font-display text-sm sm:text-base font-bold text-emerald-400">0</div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-center">
+                        <div class="text-[10px] uppercase text-slate-400">Сыгранность</div>
+                        <div id="stat-chem" class="font-display text-sm sm:text-base font-bold text-cyan-400">0%</div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-purple-500/30 text-center">
+                        <div class="text-[10px] uppercase text-slate-400">Сила</div>
+                        <div id="stat-power" class="font-display text-sm sm:text-base font-bold text-purple-300">0</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button onclick="autoFillSquad()" class="px-3.5 py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-xs font-bold transition flex items-center gap-1.5">
+                        <span>⚡ Автосбор</span>
+                    </button>
+                    <button onclick="clearSquad()" class="px-3.5 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/40 text-rose-300 text-xs font-bold transition">
+                        Очистить
+                    </button>
+                    <button id="confirm-squad-btn" onclick="confirmAndStartMatch()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/25 transition">
+                        НАЧАТЬ МАТЧ ⚽
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Workspace: Pitch (Left/Top) + 200 Players Pool (Right/Bottom) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                
+                <!-- Tactical Football Pitch (7 cols on lg) -->
+                <div class="lg:col-span-7 flex flex-col gap-3">
+                    <div class="football-pitch rounded-3xl w-full aspect-[4/4.6] sm:aspect-[4/4.3] relative select-none" id="pitch-container">
+                        <!-- Pitch Markings -->
+                        <div class="absolute inset-3 border-2 pitch-line rounded-xl"></div>
+                        <!-- Center Line -->
+                        <div class="absolute left-3 right-3 top-1/2 border-t-2 pitch-line"></div>
+                        <!-- Center Circle -->
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-36 sm:h-36 rounded-full border-2 pitch-line"></div>
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-300/60"></div>
+                        <!-- Top Penalty Box -->
+                        <div class="absolute top-3 left-1/2 -translate-x-1/2 w-1/2 h-[16%] border-b-2 border-x-2 pitch-line"></div>
+                        <div class="absolute top-3 left-1/2 -translate-x-1/2 w-1/4 h-[7%] border-b-2 border-x-2 pitch-line"></div>
+                        <!-- Bottom Penalty Box -->
+                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-1/2 h-[16%] border-t-2 border-x-2 pitch-line"></div>
+                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-1/4 h-[7%] border-t-2 border-x-2 pitch-line"></div>
+
+                        <!-- Dynamic 11 Player Slots Layer -->
+                        <div id="pitch-slots-layer" class="absolute inset-0"></div>
+                    </div>
+
+                    <!-- Chemistry Legend -->
+                    <div class="glass-panel rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+                        <span class="font-semibold text-slate-400">Сыгранность позиции:</span>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Родная (100%)</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Смежная (85%)</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Чужая (50%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 200 Players Database Pool (5 cols on lg) -->
+                <div class="lg:col-span-5 glass-panel rounded-3xl p-4 flex flex-col h-[640px] lg:h-[710px]">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-display text-base font-bold text-white flex items-center gap-2">
+                            <span>База игроков</span>
+                            <span id="pool-count-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-sans">200</span>
+                        </h3>
+                        <span id="active-slot-hint" class="text-xs text-cyan-300 font-medium">Кликни слот или перетащи</span>
+                    </div>
+
+                    <!-- Search & Sort -->
+                    <div class="flex gap-2 mb-3">
+                        <div class="relative flex-1">
+                            <input id="player-search" type="text" oninput="renderPlayerPool()" placeholder="Поиск по имени или клубу..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:outline-none text-xs sm:text-sm text-white">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <select id="player-sort" onchange="renderPlayerPool()" class="px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-slate-200 focus:border-cyan-400 focus:outline-none">
+                            <option value="ovr-desc">OVR ↓</option>
+                            <option value="ovr-asc">OVR ↑</option>
+                            <option value="price-asc">Цена ↑</option>
+                            <option value="price-desc">Цена ↓</option>
+                            <option value="pac-desc">Скорость ↓</option>
+                            <option value="sho-desc">Удар ↓</option>
+                        </select>
+                    </div>
+
+                    <!-- Position Line Filters -->
+                    <div class="grid grid-cols-5 gap-1.5 mb-3" id="line-filters">
+                        <button onclick="setLineFilter('ALL')" data-line="ALL" class="line-filter-btn py-1.5 rounded-lg text-xs font-bold bg-emerald-500/25 border border-emerald-400 text-emerald-300 transition">Все</button>
+                        <button onclick="setLineFilter('GK')" data-line="GK" class="line-filter-btn py-1.5 rounded-lg text-xs font-bold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-slate-500 transition">ВРТ</button>
+                        <button onclick="setLineFilter('DEF')" data-line="DEF" class="line-filter-btn py-1.5 rounded-lg text-xs font-bold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-slate-500 transition">ЗАЩ</button>
+                        <button onclick="setLineFilter('MID')" data-line="MID" class="line-filter-btn py-1.5 rounded-lg text-xs font-bold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-slate-500 transition">ПЗ</button>
+                        <button onclick="setLineFilter('ATT')" data-line="ATT" class="line-filter-btn py-1.5 rounded-lg text-xs font-bold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-slate-500 transition">НАП</button>
+                    </div>
+
+                    <!-- Scrollable Player Cards List -->
+                    <div id="player-pool-list" class="flex-1 overflow-y-auto pr-1 space-y-2">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================== 3. MATCH SIMULATION & RESULTS SCREEN ==================== -->
+        <section id="screen-match" class="hidden max-w-5xl mx-auto space-y-6">
+            
+            <!-- Win Probability Comparison Header -->
+            <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/30 relative overflow-hidden">
+                <div class="text-center mb-6">
+                    <span class="px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-bold uppercase tracking-wider">
+                        Анализ тактики и сил команд
+                    </span>
+                    <h2 class="font-display text-2xl sm:text-3xl font-black text-white mt-2">Вероятность победы</h2>
+                </div>
+
+                <!-- Teams VS Summary -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 mb-6 text-center">
+                    <div class="glass-card rounded-2xl p-4 border-emerald-400/40">
+                        <div class="text-xs text-emerald-400 font-bold uppercase mb-1">Твоя команда</div>
+                        <div id="match-p1-name" class="font-display text-lg font-bold text-white truncate">Ты</div>
+                        <div class="text-xs text-slate-400 mt-1">Схема: <span id="match-p1-form" class="text-white font-bold">4-3-3</span> • Сила: <span id="match-p1-power" class="text-emerald-400 font-bold">90</span></div>
+                        <div class="text-xs text-amber-300 mt-0.5 font-semibold">Бюджет: <span id="match-p1-budget">€620M / €650M</span></div>
+                        <div id="match-p1-bonus" class="text-[11px] text-cyan-300 mt-1 font-medium"></div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center">
+                        <span class="font-display text-3xl font-black bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">VS</span>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-4 border-purple-400/40">
+                        <div class="text-xs text-purple-400 font-bold uppercase mb-1">Соперник</div>
+                        <div id="match-p2-name" class="font-display text-lg font-bold text-white truncate">ИИ Профи</div>
+                        <div class="text-xs text-slate-400 mt-1">Схема: <span id="match-p2-form" class="text-white font-bold">4-4-2</span> • Сила: <span id="match-p2-power" class="text-purple-400 font-bold">87</span></div>
+                        <div class="text-xs text-amber-300 mt-0.5 font-semibold">Бюджет: <span id="match-p2-budget">€615M / €650M</span></div>
+                        <div id="match-p2-bonus" class="text-[11px] text-cyan-300 mt-1 font-medium"></div>
+                    </div>
+                </div>
+
+                <!-- Win Percentage Bar -->
+                <div class="space-y-2">
+                    <div class="flex justify-between font-display text-xl sm:text-2xl font-black">
+                        <span id="p1-win-percent" class="text-emerald-400">50%</span>
+                        <span id="p2-win-percent" class="text-purple-400">50%</span>
+                    </div>
+                    <div class="w-full h-5 rounded-full bg-slate-900 overflow-hidden p-1 border border-slate-700 flex">
+                        <div id="p1-win-bar" class="h-full rounded-l-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-1000" style="width: 50%"></div>
+                        <div id="p2-win-bar" class="h-full rounded-r-full bg-gradient-to-r from-purple-500 to-rose-500 transition-all duration-1000" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Scoreboard & Minute-by-Minute Commentary -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Scoreboard & Match Feed (7 cols) -->
+                <div class="lg:col-span-7 glass-panel rounded-3xl p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                            <div class="flex items-center gap-2">
+                                <span id="match-live-dot" class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+                                <span id="match-clock" class="font-display text-lg font-bold text-emerald-300">0'</span>
+                            </div>
+                            <div class="font-display text-3xl sm:text-4xl font-black tracking-wider text-white bg-slate-900/90 px-6 py-2 rounded-2xl border border-slate-700">
+                                <span id="score-p1" class="text-emerald-400">0</span>
+                                <span class="text-slate-500 mx-2">:</span>
+                                <span id="score-p2" class="text-purple-400">0</span>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase">JoniFoot Arena</span>
+                        </div>
+
+                        <!-- Match Events Feed -->
+                        <div id="match-events-log" class="space-y-2.5 h-72 overflow-y-auto pr-2 text-sm">
+                            <!-- Events populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Final Winner Banner -->
+                    <div id="match-final-banner" class="hidden mt-5 p-5 rounded-2xl text-center border transition-all">
+                        <div id="final-result-title" class="font-display text-2xl sm:text-3xl font-black mb-1">ПОБЕДА!</div>
+                        <p id="final-result-subtitle" class="text-xs sm:text-sm text-slate-300 mb-4"></p>
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <button onclick="rematch()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs sm:text-sm transition">
+                                Сыграть ещё раз 🔄
+                            </button>
+                            <button onclick="goHome()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold text-xs sm:text-sm transition">
+                                В главное меню
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Squads Side-by-Side Comparison (5 cols) -->
+                <div class="lg:col-span-5 glass-panel rounded-3xl p-5">
+                    <h3 class="font-display text-base font-bold text-white mb-3 flex items-center justify-between">
+                        <span>Стартовые составы</span>
+                        <span class="text-xs font-sans text-slate-400">OVR / Цена</span>
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 text-xs max-h-[430px] overflow-y-auto pr-1">
+                        <div>
+                            <div class="font-bold text-emerald-400 mb-2 pb-1 border-b border-emerald-500/20">Твой состав</div>
+                            <div id="compare-p1-list" class="space-y-1.5"></div>
+                        </div>
+                        <div>
+                            <div class="font-bold text-purple-400 mb-2 pb-1 border-b border-purple-500/20">Соперник</div>
+                            <div id="compare-p2-list" class="space-y-1.5"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Firebase SDK + Complete Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // 1. FIREBASE INITIALIZATION (MULTIPLAYER)
+        // ==========================================
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'jonifoot-draft-app';
+
+        async function initFirebase() {
+            try {
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, (user) => {
+                        currentUser = user;
+                    });
+                }
+            } catch (err) {
+                console.warn("Firebase init fallback:", err);
+            }
+        }
+        initFirebase();
+
+        // ==========================================
+        // 2. SOUND ENGINE (TONE.JS - NO EXTERNAL URLS)
+        // ==========================================
+        let soundEnabled = true;
+        let synth = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!synth && typeof Tone !== 'undefined') {
+                    synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                    synth.volume.value = -10;
+                }
+                if (!synth) return;
+                if (Tone.context.state !== 'running') Tone.start();
+
+                if (type === 'pick-gold') {
+                    synth.triggerAttackRelease(["C5", "E5", "G5", "B5"], "8n");
+                } else if (type === 'pick') {
+                    synth.triggerAttackRelease("E5", "16n");
+                } else if (type === 'goal') {
+                    synth.triggerAttackRelease(["C4", "G4", "C5", "E5"], "4n");
+                } else if (type === 'whistle') {
+                    synth.triggerAttackRelease(["G5", "A5"], "8n");
+                }
+            } catch (e) {}
+        }
+
+        window.toggleSound = function() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-icon-on').classList.toggle('hidden', !soundEnabled);
+            document.getElementById('sound-icon-off').classList.toggle('hidden', soundEnabled);
+            showToast(soundEnabled ? "Звук включен" : "Звук выключен", "info");
+        };
+
+        // ==========================================
+        // 3. DATABASE OF 200 PROFESSIONAL PLAYERS
+        // ==========================================
+        // Format: [Name, Pos, OVR, Club, Flag, PAC, SHO, PAS, DEF]
+        const RAW_PLAYERS = [
+            // 90+ ICONS & SUPERSTARS
+            ["Килиан Мбаппе", "ST", 93, "Реал Мадрид", "🇫🇷", 97, 92, 83, 38],
+            ["Родри", "CDM", 93, "Манчестер Сити", "🇪🇸", 68, 82, 91, 90],
+            ["Криштиану Роналду", "ST", 92, "Аль-Наср", "🇵🇹", 86, 95, 82, 36],
+            ["Винисиус Жуниор", "LW", 92, "Реал Мадрид", "🇧🇷", 96, 87, 84, 31],
+            ["Эрлинг Холанд", "ST", 92, "Манчестер Сити", "🇳🇴", 90, 95, 70, 46],
+            ["Джуд Беллингем", "CAM", 92, "Реал Мадрид", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 84, 89, 88, 80],
+            ["Мохамед Салах", "RW", 91, "Ливерпуль", "🇪🇬", 90, 90, 85, 46],
+            ["Харри Кейн", "ST", 91, "Бавария", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 71, 94, 87, 50],
+            ["Ламин Ямаль", "RW", 90, "Барселона", "🇪🇸", 91, 84, 88, 35],
+            ["Кевин Де Брёйне", "CM", 90, "Манчестер Сити", "🇧🇪", 72, 87, 95, 66],
+            ["Вирджил ван Дейк", "CB", 90, "Ливерпуль", "🇳🇱", 80, 62, 74, 92],
+            ["Тибо Куртуа", "GK", 90, "Реал Мадрид", "🇧🇪", 86, 89, 78, 91],
+            ["Лионель Месси", "RW", 90, "Интер Майами", "🇦🇷", 80, 88, 93, 34],
+            ["Федерико Вальверде", "CM", 90, "Реал Мадрид", "🇺🇾", 90, 86, 87, 83],
+            ["Лаутаро Мартинес", "ST", 90, "Интер", "🇦🇷", 84, 90, 78, 52],
+            ["Джанлуиджи Доннарумма", "GK", 90, "ПСЖ", "🇮🇹", 90, 85, 76, 91],
+
+            // 87 - 89 ELITE STARS
+            ["Флориан Вирц", "CAM", 89, "Байер", "🇩🇪", 84, 83, 90, 54],
+            ["Джамал Мусиала", "CAM", 89, "Бавария", "🇩🇪", 87, 82, 86, 56],
+            ["Букайо Сака", "RW", 89, "Арсенал", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 88, 85, 86, 62],
+            ["Роберт Левандовски", "ST", 89, "Барселона", "🇵🇱", 76, 91, 81, 45],
+            ["Рафинья", "LW", 89, "Барселона", "🇧🇷", 91, 85, 84, 52],
+            ["Антонио Рюдигер", "CB", 89, "Реал Мадрид", "🇩🇪", 85, 56, 72, 89],
+            ["Вильям Салиба", "CB", 89, "Арсенал", "🇫🇷", 83, 45, 73, 90],
+            ["Алиссон Бекер", "GK", 89, "Ливерпуль", "🇧🇷", 87, 86, 85, 89],
+            ["Фил Фоден", "RW", 89, "Манчестер Сити", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 86, 86, 87, 58],
+            ["Мартин Эдегор", "CAM", 89, "Арсенал", "🇳🇴", 78, 83, 91, 66],
+            ["Педри", "CM", 89, "Барселона", "🇪🇸", 80, 76, 89, 74],
+            ["Деклан Райс", "CDM", 89, "Арсенал", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 76, 75, 85, 88],
+            ["Рубен Диаш", "CB", 88, "Манчестер Сити", "🇵🇹", 68, 44, 72, 90],
+            ["Александер Исак", "ST", 88, "Ньюкасл", "🇸🇪", 88, 88, 77, 42],
+            ["Коул Палмер", "CAM", 88, "Челси", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 81, 86, 88, 52],
+            ["Бернарду Силва", "CM", 88, "Манчестер Сити", "🇵🇹", 77, 79, 88, 72],
+            ["Антуан Гризманн", "ST", 88, "Атлетико Мадрид", "🇫🇷", 79, 88, 88, 66],
+            ["Николо Барелла", "CM", 88, "Интер", "🇮🇹", 81, 79, 86, 83],
+            ["Алессандро Бастони", "CB", 88, "Интер", "🇮🇹", 77, 48, 80, 89],
+            ["Ян Облак", "GK", 88, "Атлетико Мадрид", "🇸🇮", 85, 88, 78, 89],
+            ["Эдерсон", "GK", 88, "Манчестер Сити", "🇧🇷", 86, 84, 91, 86],
+            ["Трент Александер-Арнольд", "RB", 88, "Ливерпуль", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 80, 74, 92, 79],
+            ["Ашраф Хакими", "RB", 88, "ПСЖ", "🇲🇦", 94, 78, 82, 80],
+            ["Тео Эрнандес", "LB", 88, "Милан", "🇫🇷", 95, 78, 80, 81],
+            ["Бруну Фернандеш", "CAM", 88, "Манчестер Юнайтед", "🇵🇹", 74, 85, 90, 68],
+            ["Сон Хын Мин", "LW", 87, "Тоттенхэм", "🇰🇷", 88, 89, 82, 43],
+            ["Виктор Осимхен", "ST", 87, "Галатасарай", "🇳🇬", 91, 87, 68, 44],
+            ["Хвича Кварацхелия", "LW", 87, "ПСЖ", "🇬🇪", 88, 83, 84, 48],
+            ["Рафаэл Леау", "LW", 87, "Милан", "🇵🇹", 94, 82, 80, 35],
+            ["Габриэл Магальяйнс", "CB", 87, "Арсенал", "🇧🇷", 74, 48, 67, 88],
+            ["Маркиньос", "CB", 87, "ПСЖ", "🇧🇷", 79, 55, 77, 88],
+            ["Жюль Кунде", "RB", 87, "Барселона", "🇫🇷", 84, 52, 76, 87],
+            ["Дани Карвахаль", "RB", 87, "Реал Мадрид", "🇪🇸", 81, 62, 80, 85],
+            ["Алехандро Гримальдо", "LB", 87, "Байер", "🇪🇸", 85, 79, 87, 79],
+            ["Йозуа Киммих", "CDM", 87, "Бавария", "🇩🇪", 72, 75, 89, 83],
+            ["Орельен Тчуамени", "CDM", 87, "Реал Мадрид", "🇫🇷", 75, 72, 81, 86],
+            ["Хакан Чалханоглу", "CDM", 87, "Интер", "🇹🇷", 71, 83, 90, 79],
+            ["Френки де Йонг", "CM", 87, "Барселона", "🇳🇱", 83, 71, 87, 78],
+            ["Майк Меньян", "GK", 87, "Милан", "🇫🇷", 86, 84, 86, 87],
+            ["Эмилиано Мартинес", "GK", 87, "Астон Вилла", "🇦🇷", 85, 84, 82, 87],
+            ["Янн Зоммер", "GK", 87, "Интер", "🇨🇭", 84, 85, 83, 87],
+            ["Грегор Кобель", "GK", 87, "Боруссия Д", "🇨🇭", 86, 84, 75, 87],
+            ["Витинья", "CM", 87, "ПСЖ", "🇵🇹", 79, 77, 88, 76],
+            ["Хулиан Альварес", "ST", 87, "Атлетико Мадрид", "🇦🇷", 85, 86, 82, 57],
+
+            // 84 - 86 TOP PLAYERS
+            ["Родриго", "RW", 86, "Реал Мадрид", "🇧🇷", 89, 83, 81, 41],
+            ["Нико Уильямс", "LW", 86, "Атлетик Бильбао", "🇪🇸", 94, 79, 80, 38],
+            ["Джаред Боуэн", "RW", 86, "Вест Хэм", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 85, 84, 79, 52],
+            ["Олли Уоткинс", "ST", 86, "Астон Вилла", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 86, 85, 76, 44],
+            ["Виктор Дьёкереш", "ST", 86, "Спортинг", "🇸🇪", 88, 87, 74, 42],
+            ["Маркус Тюрам", "ST", 86, "Интер", "🇫🇷", 87, 84, 76, 46],
+            ["Душан Влахович", "ST", 86, "Ювентус", "🇷🇸", 81, 87, 71, 36],
+            ["Луис Диас", "LW", 86, "Ливерпуль", "🇨🇴", 91, 82, 78, 45],
+            ["Алексис Мак Аллистер", "CM", 86, "Ливерпуль", "🇦🇷", 74, 80, 86, 78],
+            ["Бруно Гимарайнс", "CM", 86, "Ньюкасл", "🇧🇷", 73, 76, 86, 82],
+            ["Эдуардо Камавинга", "CM", 86, "Реал Мадрид", "🇫🇷", 83, 70, 82, 83],
+            ["Гави", "CM", 86, "Барселона", "🇪🇸", 79, 71, 83, 79],
+            ["Дани Ольмо", "CAM", 86, "Барселона", "🇪🇸", 79, 83, 86, 55],
+            ["Джеймс Мэддисон", "CAM", 86, "Тоттенхэм", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 76, 82, 87, 56],
+            ["Пауло Дибала", "CAM", 86, "Рома", "🇦🇷", 80, 86, 86, 40],
+            ["Йошко Гвардиол", "LB", 86, "Манчестер Сити", "🇭🇷", 82, 66, 77, 86],
+            ["Нуну Мендеш", "LB", 86, "ПСЖ", "🇵🇹", 93, 66, 78, 81],
+            ["Альфонсо Дэвис", "LB", 86, "Бавария", "🇨🇦", 96, 71, 79, 78],
+            ["Эдер Милитао", "CB", 86, "Реал Мадрид", "🇧🇷", 85, 52, 71, 86],
+            ["Рональд Араухо", "CB", 86, "Барселона", "🇺🇾", 83, 54, 68, 87],
+            ["Бремер", "CB", 86, "Ювентус", "🇧🇷", 81, 51, 64, 87],
+            ["Джонатан Та", "CB", 86, "Байер", "🇩🇪", 77, 45, 67, 87],
+            ["Кристиан Ромеро", "CB", 86, "Тоттенхэм", "🇦🇷", 77, 48, 68, 87],
+            ["Ибраима Конате", "CB", 86, "Ливерпуль", "🇫🇷", 82, 43, 66, 87],
+            ["Джереми Фримпонг", "RB", 86, "Байер", "🇳🇱", 95, 74, 79, 75],
+            ["Кайл Уокер", "RB", 86, "Манчестер Сити", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 90, 64, 77, 83],
+            ["Унаи Симон", "GK", 86, "Атлетик Бильбао", "🇪🇸", 85, 83, 78, 86],
+            ["Давид Райя", "GK", 86, "Арсенал", "🇪🇸", 84, 83, 85, 86],
+            ["Мануэль Нойер", "GK", 86, "Бавария", "🇩🇪", 82, 84, 88, 85],
+            ["Андре Онана", "GK", 86, "Манчестер Юнайтед", "🇨🇲", 85, 82, 87, 84],
+            ["Кай Хаверц", "ST", 85, "Арсенал", "🇩🇪", 81, 82, 81, 56],
+            ["Диогу Жота", "ST", 85, "Ливерпуль", "🇵🇹", 85, 85, 76, 56],
+            ["Коди Гакпо", "LW", 85, "Ливерпуль", "🇳🇱", 86, 83, 80, 48],
+            ["Лерой Сане", "RW", 85, "Бавария", "🇩🇪", 91, 82, 80, 40],
+            ["Кингсли Коман", "LW", 85, "Бавария", "🇫🇷", 91, 79, 80, 35],
+            ["Серж Гнабри", "RW", 85, "Бавария", "🇩🇪", 84, 84, 80, 45],
+            ["Усман Дембеле", "RW", 85, "ПСЖ", "🇫🇷", 93, 79, 83, 37],
+            ["Брэдли Баркола", "LW", 85, "ПСЖ", "🇫🇷", 92, 80, 79, 41],
+            ["Адемола Лукман", "LW", 85, "Аталанта", "🇳🇬", 89, 84, 79, 44],
+            ["Эндрик", "ST", 84, "Реал Мадрид", "🇧🇷", 88, 84, 70, 36],
+            ["Дарвин Нуньес", "ST", 84, "Ливерпуль", "🇺🇾", 90, 83, 70, 45],
+            ["Алваро Мората", "ST", 84, "Милан", "🇪🇸", 79, 84, 74, 42],
+            ["Ромелу Лукаку", "ST", 84, "Наполи", "🇧🇪", 80, 85, 75, 40],
+            ["Маркус Рэшфорд", "LW", 84, "Манчестер Юнайтед", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 89, 83, 78, 42],
+            ["Алехандро Гарначо", "LW", 84, "Манчестер Юнайтед", "🇦🇷", 90, 80, 75, 38],
+            ["Жереми Доку", "LW", 85, "Манчестер Сити", "🇧🇪", 94, 76, 79, 36],
+            ["Савиньо", "RW", 84, "Манчестер Сити", "🇧🇷", 90, 77, 81, 35],
+            ["Джек Грилиш", "LW", 84, "Манчестер Сити", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 80, 77, 84, 52],
+            ["Габриэл Мартинелли", "LW", 85, "Арсенал", "🇧🇷", 91, 81, 77, 48],
+            ["Леандро Троссард", "LW", 84, "Арсенал", "🇧🇪", 81, 83, 81, 46],
+            ["Гранит Джака", "CDM", 85, "Байер", "🇨🇭", 64, 77, 86, 82],
+            ["Тон Копмейнерс", "CM", 85, "Ювентус", "🇳🇱", 74, 83, 85, 79],
+            ["Дуглас Луис", "CM", 85, "Ювентус", "🇧🇷", 75, 78, 84, 80],
+            ["Сандро Тонали", "CDM", 85, "Ньюкасл", "🇮🇹", 81, 75, 83, 83],
+            ["Жоэлинтон", "CM", 84, "Ньюкасл", "🇧🇷", 80, 77, 79, 82],
+            ["Энцо Фернандес", "CM", 85, "Челси", "🇦🇷", 74, 77, 86, 78],
+            ["Мойзес Кайседо", "CDM", 85, "Челси", "🇪🇨", 79, 68, 80, 85],
+            ["Родриго Де Пауль", "CM", 85, "Атлетико Мадрид", "🇦🇷", 78, 78, 85, 80],
+            ["Коке", "CM", 84, "Атлетико Мадрид", "🇪🇸", 66, 74, 85, 80],
+            ["Маркос Льоренте", "CM", 84, "Атлетико Мадрид", "🇪🇸", 89, 79, 81, 80],
+            ["Доминик Собослаи", "CAM", 85, "Ливерпуль", "🇭🇺", 84, 83, 85, 68],
+            ["Райан Гравенберх", "CDM", 84, "Ливерпуль", "🇳🇱", 81, 74, 82, 81],
+            ["Матео Ковачич", "CM", 85, "Манчестер Сити", "🇭🇷", 77, 72, 85, 78],
+            ["Илкай Гюндоган", "CM", 85, "Манчестер Сити", "🇩🇪", 66, 81, 87, 74],
+            ["Леон Горецка", "CM", 84, "Бавария", "🇩🇪", 78, 81, 81, 81],
+            ["Конрад Лаймер", "CDM", 84, "Бавария", "🇦🇹", 84, 73, 79, 83],
+            ["Александар Павлович", "CDM", 83, "Бавария", "🇩🇪", 72, 70, 84, 81],
+            ["Фабиан Руис", "CM", 85, "ПСЖ", "🇪🇸", 73, 79, 86, 77],
+            ["Уоррен Заир-Эмери", "CM", 84, "ПСЖ", "🇫🇷", 82, 74, 82, 80],
+            ["Жоау Невеш", "CDM", 84, "ПСЖ", "🇵🇹", 79, 72, 83, 83],
+            ["Генрих Мхитарян", "CM", 84, "Интер", "🇦🇲", 76, 79, 84, 75],
+            ["Давиде Фраттези", "CM", 84, "Интер", "🇮🇹", 82, 80, 79, 77],
+            ["Тиджани Рейндерс", "CM", 85, "Милан", "🇳🇱", 80, 79, 84, 78],
+            ["Кристиан Пулишич", "RW", 85, "Милан", "🇺🇸", 88, 82, 81, 45],
+            ["Франк Кессье", "CDM", 84, "Аль-Ахли", "🇨🇮", 78, 78, 79, 83],
+            ["Н'Голо Канте", "CDM", 85, "Аль-Иттихад", "🇫🇷", 79, 68, 79, 87],
+            ["Сергей Милинкович-Савич", "CM", 85, "Аль-Хиляль", "🇷🇸", 71, 83, 85, 80],
+            ["Рубен Невеш", "CDM", 84, "Аль-Хиляль", "🇵🇹", 64, 78, 87, 80],
+            ["Неймар", "LW", 86, "Аль-Хиляль", "🇧🇷", 84, 83, 88, 32],
+            ["Карим Бензема", "ST", 86, "Аль-Иттихад", "🇫🇷", 76, 87, 83, 39],
+
+            // 80 - 83 SOLID PROS & DEFENDERS/GKs
+            ["Эндрю Робертсон", "LB", 85, "Ливерпуль", "🏴󠁧󠁢󠁳󠁣󠁴󠁿", 83, 62, 82, 82],
+            ["Ферлан Менди", "LB", 84, "Реал Мадрид", "🇫🇷", 89, 64, 76, 83],
+            ["Алехандро Бальде", "LB", 84, "Барселона", "🇪🇸", 92, 62, 76, 78],
+            ["Федерико Димарко", "LB", 86, "Интер", "🇮🇹", 83, 79, 86, 80],
+            ["Дензел Дюмфрис", "RB", 84, "Интер", "🇳🇱", 88, 72, 75, 81],
+            ["Бенжамен Павар", "CB", 85, "Интер", "🇫🇷", 77, 65, 78, 86],
+            ["Франческо Ачерби", "CB", 84, "Интер", "🇮🇹", 66, 52, 70, 86],
+            ["Стефан де Врей", "CB", 84, "Интер", "🇳🇱", 68, 49, 71, 85],
+            ["Пау Кубарси", "CB", 83, "Барселона", "🇪🇸", 78, 42, 78, 84],
+            ["Иньиго Мартинес", "CB", 83, "Барселона", "🇪🇸", 72, 54, 75, 84],
+            ["Андреас Кристенсен", "CB", 84, "Барселона", "🇩🇰", 73, 48, 75, 85],
+            ["Давид Алаба", "CB", 85, "Реал Мадрид", "🇦🇹", 78, 72, 82, 85],
+            ["Начо Фернандес", "CB", 83, "Аль-Кадисия", "🇪🇸", 76, 46, 70, 84],
+            ["Лукас Эрнандес", "CB", 84, "ПСЖ", "🇫🇷", 81, 56, 74, 85],
+            ["Милан Шкриньяр", "CB", 84, "ПСЖ", "🇸🇰", 72, 45, 67, 86],
+            ["Уильям Пачо", "CB", 83, "ПСЖ", "🇪🇨", 80, 42, 69, 84],
+            ["Дайо Упамекано", "CB", 84, "Бавария", "🇫🇷", 84, 48, 71, 84],
+            ["Ким Мин Джэ", "CB", 85, "Бавария", "🇰🇷", 82, 46, 68, 86],
+            ["Маттейс де Лигт", "CB", 84, "Манчестер Юнайтед", "🇳🇱", 75, 58, 70, 85],
+            ["Лисандро Мартинес", "CB", 84, "Манчестер Юнайтед", "🇦🇷", 77, 57, 79, 85],
+            ["Лени Йоро", "CB", 82, "Манчестер Юнайтед", "🇫🇷", 80, 44, 68, 83],
+            ["Бен Уайт", "RB", 85, "Арсенал", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 80, 56, 79, 85],
+            ["Юрриен Тимбер", "RB", 83, "Арсенал", "🇳🇱", 83, 58, 77, 83],
+            ["Риккардо Калафьори", "LB", 83, "Арсенал", "🇮🇹", 80, 62, 77, 83],
+            ["Мануэль Аканджи", "CB", 85, "Манчестер Сити", "🇨🇭", 81, 52, 77, 85],
+            ["Натан Аке", "CB", 84, "Манчестер Сити", "🇳🇱", 78, 54, 76, 85],
+            ["Джон Стоунз", "CB", 85, "Манчестер Сити", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 74, 60, 81, 85],
+            ["Рис Джеймс", "RB", 84, "Челси", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 83, 73, 83, 82],
+            ["Мало Гюсто", "RB", 82, "Челси", "🇫🇷", 87, 56, 76, 80],
+            ["Леви Колвилл", "CB", 82, "Челси", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 77, 45, 74, 83],
+            ["Марк Кукурелья", "LB", 83, "Челси", "🇪🇸", 82, 60, 77, 82],
+            ["Педро Порро", "RB", 84, "Тоттенхэм", "🇪🇸", 85, 74, 81, 79],
+            ["Микки ван де Вен", "CB", 84, "Тоттенхэм", "🇳🇱", 91, 46, 70, 84],
+            ["Дестини Удоджи", "LB", 83, "Тоттенхэм", "🇮🇹", 88, 63, 75, 80],
+            ["Киран Триппьер", "RB", 83, "Ньюкасл", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 74, 66, 85, 81],
+            ["Свен Ботман", "CB", 83, "Ньюкасл", "🇳🇱", 72, 42, 68, 85],
+            ["Эдмонд Тапсоба", "CB", 84, "Байер", "🇧🇫", 80, 50, 75, 84],
+            ["Пьеро Инкапье", "CB", 83, "Байер", "🇪🇨", 84, 52, 73, 83],
+            ["Нико Шлоттербек", "CB", 85, "Боруссия Д", "🇩🇪", 79, 55, 76, 85],
+            ["Юлиан Брандт", "CAM", 85, "Боруссия Д", "🇩🇪", 78, 81, 86, 56],
+            ["Карим Адейеми", "LW", 82, "Боруссия Д", "🇩🇪", 95, 78, 73, 38],
+            ["Серу Гирасси", "ST", 85, "Боруссия Д", "🇬🇳", 80, 86, 73, 40],
+            ["Хави Симонс", "CAM", 85, "РБ Лейпциг", "🇳🇱", 87, 81, 84, 55],
+            ["Лои Опенда", "ST", 85, "РБ Лейпциг", "🇧🇪", 93, 84, 72, 36],
+            ["Беньямин Шешко", "ST", 83, "РБ Лейпциг", "🇸🇮", 87, 83, 68, 42],
+            ["Даниэль Ольмо-Вилья", "GK", 82, "Севилья", "🇪🇸", 82, 80, 75, 82],
+            ["Георгий Мамардашвили", "GK", 85, "Валенсия", "🇬🇪", 85, 83, 74, 86],
+            ["Диогу Кошта", "GK", 85, "Порту", "🇵🇹", 84, 83, 82, 85],
+            ["Лукаш Градецки", "GK", 84, "Байер", "🇫🇮", 83, 82, 74, 84],
+            ["Гульельмо Викарио", "GK", 84, "Тоттенхэм", "🇮🇹", 85, 81, 76, 84],
+            ["Ник Поуп", "GK", 84, "Ньюкасл", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 82, 83, 70, 85],
+            ["Войцех Щенсны", "GK", 84, "Барселона", "🇵🇱", 83, 82, 75, 84],
+            ["Андрей Лунин", "GK", 83, "Реал Мадрид", "🇺🇦", 83, 81, 77, 83],
+            ["Джанлука Скамакка", "ST", 83, "Аталанта", "🇮🇹", 78, 84, 72, 38],
+            ["Шарль Де Кетеларе", "CAM", 83, "Аталанта", "🇧🇪", 81, 80, 82, 48],
+            ["Эдерсон Лоуренсо", "CDM", 84, "Аталанта", "🇧🇷", 80, 76, 81, 83],
+            ["Артем Довбик", "ST", 84, "Рома", "🇺🇦", 81, 85, 71, 36],
+            ["Лоренцо Пеллегрини", "CAM", 83, "Рома", "🇮🇹", 75, 80, 84, 68],
+            ["Джанлука Манчини", "CB", 83, "Рома", "🇮🇹", 71, 54, 67, 84],
+            ["Алессандро Буонджорно", "CB", 84, "Наполи", "🇮🇹", 79, 45, 68, 85],
+            ["Станислав Лоботка", "CDM", 84, "Наполи", "🇸🇰", 76, 67, 84, 81],
+            ["Скотт Мактоминей", "CM", 83, "Наполи", "🏴󠁧󠁢󠁳󠁣󠁴󠁿", 76, 81, 77, 80],
+            ["Маттео Политано", "RW", 82, "Наполи", "🇮🇹", 85, 79, 80, 46],
+            ["Кенан Йылдыз", "CAM", 82, "Ювентус", "🇹🇷", 85, 79, 80, 44],
+            ["Франсишку Консейсау", "RW", 82, "Ювентус", "🇵🇹", 89, 77, 79, 40],
+            ["Федерико Кьеза", "RW", 84, "Ливерпуль", "🇮🇹", 90, 82, 79, 46],
+            ["Мохамед Кудус", "RW", 84, "Вест Хэм", "🇬🇭", 88, 81, 79, 58],
+            ["Лукас Пакета", "CAM", 84, "Вест Хэм", "🇧🇷", 77, 80, 85, 71],
+            ["Эберечи Эзе", "CAM", 83, "Кристал Пэлас", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 83, 80, 82, 52],
+            ["Майкл Олисе", "RW", 85, "Бавария", "🇫🇷", 86, 81, 85, 48],
+            ["Матеус Кунья", "ST", 83, "Вулверхэмптон", "🇧🇷", 84, 82, 78, 46],
+            ["Александер Сёрлот", "ST", 84, "Атлетико Мадрид", "🇳🇴", 81, 85, 72, 42],
+            ["Иньяки Уильямс", "RW", 83, "Атлетик Бильбао", "🇬🇭", 93, 80, 76, 44],
+            ["Ойан Сансет", "CAM", 83, "Атлетик Бильбао", "🇪🇸", 79, 81, 81, 62],
+            ["Микель Мерино", "CM", 85, "Арсенал", "🇪🇸", 73, 78, 83, 83],
+            ["Мартин Субименди", "CDM", 85, "Реал Сосьедад", "🇪🇸", 74, 71, 84, 84],
+            ["Такефуса Кубо", "RW", 83, "Реал Сосьедад", "🇯🇵", 88, 78, 81, 42],
+            ["Микель Оярсабаль", "LW", 83, "Реал Сосьедад", "🇪🇸", 79, 82, 81, 45],
+            ["Иско", "CAM", 84, "Реал Бетис", "🇪🇸", 72, 80, 86, 56],
+            ["Яго Аспас", "ST", 83, "Сельта", "🇪🇸", 76, 84, 82, 38],
+            ["Жонатан Дэвид", "ST", 84, "Лилль", "🇨🇦", 85, 84, 76, 40],
+            ["Эдон Жегрова", "RW", 82, "Лилль", "🇽🇰", 87, 79, 80, 38],
+            ["Александр Головин", "CAM", 83, "Монако", "🇷🇺", 81, 79, 84, 68],
+            ["Денис Закария", "CDM", 82, "Монако", "🇨🇭", 81, 70, 76, 82],
+            ["Мейсон Гринвуд", "RW", 82, "Марсель", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 85, 83, 77, 36],
+            ["Адриен Рабьо", "CM", 84, "Марсель", "🇫🇷", 78, 79, 82, 81],
+            ["Пьер-Эмерик Обамеянг", "ST", 82, "Аль-Кадисия", "🇬🇦", 86, 83, 73, 36],
+            ["Александар Митрович", "ST", 84, "Аль-Хиляль", "🇷🇸", 74, 86, 72, 42],
+            ["Жоау Канселу", "RB", 85, "Аль-Хиляль", "🇵🇹", 83, 74, 85, 79],
+            ["Малком", "RW", 83, "Аль-Хиляль", "🇧🇷", 87, 81, 81, 40],
+            ["Рияд Марез", "RW", 84, "Аль-Ахли", "🇩🇿", 81, 82, 85, 38],
+            ["Садио Мане", "LW", 84, "Аль-Наср", "🇸🇳", 87, 83, 78, 44],
+            ["Эмерик Ляпорт", "CB", 84, "Аль-Наср", "🇪🇸", 68, 52, 76, 85]
+        ];
+
+        // Calculate realistic transfer price in €M based on OVR
+        function calculatePlayerPrice(ovr, index) {
+            const basePrices = {
+                80: 10,
+                81: 14,
+                82: 19,
+                83: 25,
+                84: 32,
+                85: 41,
+                86: 52,
+                87: 64,
+                88: 76,
+                89: 88,
+                90: 100,
+                91: 110,
+                92: 118,
+                93: 125,
+                94: 130
+            };
+            const base = basePrices[ovr] || 15;
+            const variance = (index % 4) - 1;
+            return Math.max(8, base + variance);
+        }
+
+        // Normalize into player objects with transfer price
+        const PLAYERS_DB = RAW_PLAYERS.slice(0, 200).map((p, index) => ({
+            id: index + 1,
+            name: p[0],
+            pos: p[1],
+            ovr: p[2],
+            club: p[3],
+            flag: p[4],
+            price: calculatePlayerPrice(p[2], index),
+            stats: { pac: p[5], sho: p[6], pas: p[7], def: p[8] }
+        }));
+
+        // ==========================================
+        // 4. FORMATIONS & POSITION CHEMISTRY ENGINE
+        // ==========================================
+        const FORMATIONS = {
+            "4-3-3": {
+                name: "4-3-3",
+                label: "4-3-3 Атака",
+                slots: [
+                    { id: 0, pos: "GK", x: 50, y: 90 },
+                    { id: 1, pos: "LB", x: 16, y: 72 },
+                    { id: 2, pos: "CB", x: 38, y: 75 },
+                    { id: 3, pos: "CB", x: 62, y: 75 },
+                    { id: 4, pos: "RB", x: 84, y: 72 },
+                    { id: 5, pos: "CM", x: 28, y: 48 },
+                    { id: 6, pos: "CDM", x: 50, y: 54 },
+                    { id: 7, pos: "CM", x: 72, y: 48 },
+                    { id: 8, pos: "LW", x: 18, y: 22 },
+                    { id: 9, pos: "ST", x: 50, y: 17 },
+                    { id: 10, pos: "RW", x: 82, y: 22 }
+                ]
+            },
+            "4-4-2": {
+                name: "4-4-2",
+                label: "4-4-2 Классика",
+                slots: [
+                    { id: 0, pos: "GK", x: 50, y: 90 },
+                    { id: 1, pos: "LB", x: 16, y: 72 },
+                    { id: 2, pos: "CB", x: 38, y: 75 },
+                    { id: 3, pos: "CB", x: 62, y: 75 },
+                    { id: 4, pos: "RB", x: 84, y: 72 },
+                    { id: 5, pos: "LW", x: 16, y: 45 },
+                    { id: 6, pos: "CM", x: 38, y: 48 },
+                    { id: 7, pos: "CM", x: 62, y: 48 },
+                    { id: 8, pos: "RW", x: 84, y: 45 },
+                    { id: 9, pos: "ST", x: 36, y: 20 },
+                    { id: 10, pos: "ST", x: 64, y: 20 }
+                ]
+            },
+            "4-2-3-1": {
+                name: "4-2-3-1",
+                label: "4-2-3-1 Контроль",
+                slots: [
+                    { id: 0, pos: "GK", x: 50, y: 90 },
+                    { id: 1, pos: "LB", x: 16, y: 73 },
+                    { id: 2, pos: "CB", x: 38, y: 76 },
+                    { id: 3, pos: "CB", x: 62, y: 76 },
+                    { id: 4, pos: "RB", x: 84, y: 73 },
+                    { id: 5, pos: "CDM", x: 36, y: 55 },
+                    { id: 6, pos: "CDM", x: 64, y: 55 },
+                    { id: 7, pos: "LW", x: 20, y: 34 },
+                    { id: 8, pos: "CAM", x: 50, y: 36 },
+                    { id: 9, pos: "RW", x: 80, y: 34 },
+                    { id: 10, pos: "ST", x: 50, y: 16 }
+                ]
+            },
+            "3-5-2": {
+                name: "3-5-2",
+                label: "3-5-2 Центр",
+                slots: [
+                    { id: 0, pos: "GK", x: 50, y: 90 },
+                    { id: 1, pos: "CB", x: 25, y: 74 },
+                    { id: 2, pos: "CB", x: 50, y: 76 },
+                    { id: 3, pos: "CB", x: 75, y: 74 },
+                    { id: 4, pos: "LB", x: 14, y: 48 },
+                    { id: 5, pos: "CDM", x: 36, y: 54 },
+                    { id: 6, pos: "CAM", x: 50, y: 38 },
+                    { id: 7, pos: "CDM", x: 64, y: 54 },
+                    { id: 8, pos: "RB", x: 86, y: 48 },
+                    { id: 9, pos: "ST", x: 36, y: 19 },
+                    { id: 10, pos: "ST", x: 64, y: 19 }
+                ]
+            },
+            "5-3-2": {
+                name: "5-3-2",
+                label: "5-3-2 Автобус",
+                slots: [
+                    { id: 0, pos: "GK", x: 50, y: 90 },
+                    { id: 1, pos: "LB", x: 13, y: 68 },
+                    { id: 2, pos: "CB", x: 31, y: 75 },
+                    { id: 3, pos: "CB", x: 50, y: 77 },
+                    { id: 4, pos: "CB", x: 69, y: 75 },
+                    { id: 5, pos: "RB", x: 87, y: 68 },
+                    { id: 6, pos: "CM", x: 30, y: 46 },
+                    { id: 7, pos: "CDM", x: 50, y: 50 },
+                    { id: 8, pos: "CM", x: 70, y: 46 },
+                    { id: 9, pos: "ST", x: 36, y: 20 },
+                    { id: 10, pos: "ST", x: 64, y: 20 }
+                ]
+            }
+        };
+
+        const ADJACENT_POSITIONS = {
+            GK: [],
+            CB: ["LB", "RB", "CDM"],
+            LB: ["CB", "LW", "CM"],
+            RB: ["CB", "RW", "CM"],
+            CDM: ["CM", "CB", "CAM"],
+            CM: ["CDM", "CAM", "LW", "RW"],
+            CAM: ["CM", "ST", "LW", "RW", "CDM"],
+            LW: ["ST", "CAM", "RW", "LB", "CM"],
+            RW: ["ST", "CAM", "LW", "RB", "CM"],
+            ST: ["LW", "RW", "CAM"]
+        };
+
+        function getPositionCompatibility(playerPos, slotPos) {
+            if (playerPos === slotPos) return { mult: 1.0, status: "perfect", label: "100%" };
+            if (ADJACENT_POSITIONS[slotPos]?.includes(playerPos)) return { mult: 0.85, status: "partial", label: "85%" };
+            return { mult: 0.50, status: "out", label: "50%" };
+        }
+
+        function getLineCategory(pos) {
+            if (pos === "GK") return "GK";
+            if (["CB", "LB", "RB"].includes(pos)) return "DEF";
+            if (["CDM", "CM", "CAM"].includes(pos)) return "MID";
+            return "ATT";
+        }
+
+        // ==========================================
+        // 5. GLOBAL GAME STATE & BUDGET HELPERS
+        // ==========================================
+        const DEFAULT_BUDGET = 650; // €650M
+
+        const gameState = {
+            mode: "ai", // "ai" | "online"
+            aiDifficulty: "pro", // "rookie" | "pro" | "legend"
+            formation: "4-3-3",
+            squad: Array(11).fill(null),
+            maxBudget: DEFAULT_BUDGET,
+            selectedSlotIndex: null,
+            lineFilter: "ALL",
+            roomCode: null,
+            playerRole: null, // "host" | "guest"
+            playerName: "Тренер",
+            roomUnsubscribe: null,
+            matchStartedInRoom: false
+        };
+
+        function getSpentBudget(squad = gameState.squad) {
+            return squad.reduce((sum, p) => sum + (p ? p.price : 0), 0);
+        }
+
+        function getRemainingBudget() {
+            return Math.max(0, gameState.maxBudget - getSpentBudget());
+        }
+
+        // ==========================================
+        // 6. UI HELPERS (TOASTS & SCREENS)
+        // ==========================================
+        function showToast(message, type = "info") {
+            const container = document.getElementById("toast-container");
+            if (!container) return;
+            const colors = {
+                info: "border-cyan-400/50 bg-slate-900/95 text-cyan-200",
+                success: "border-emerald-400/50 bg-emerald-950/95 text-emerald-200",
+                error: "border-rose-500/60 bg-rose-950/95 text-rose-200",
+                gold: "border-amber-400/70 bg-amber-950/95 text-amber-200"
+            };
+            const toast = document.createElement("div");
+            toast.className = `pointer-events-auto px-4 py-3 rounded-2xl border shadow-xl backdrop-blur-md text-xs sm:text-sm font-semibold transition-all duration-300 ${colors[type] || colors.info}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(8px)";
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function switchScreen(screenId) {
+            ["screen-home", "screen-draft", "screen-match"].forEach(id => {
+                document.getElementById(id).classList.add("hidden");
+            });
+            document.getElementById(screenId).classList.remove("hidden");
+
+            const isHome = screenId === "screen-home";
+            document.getElementById("home-btn").classList.toggle("hidden", isHome);
+            document.getElementById("header-mode-badge").classList.toggle("hidden", isHome);
+            document.getElementById("header-mode-badge").classList.toggle("flex", !isHome);
+        }
+
+        window.goHome = function() {
+            if (gameState.roomUnsubscribe) {
+                gameState.roomUnsubscribe();
+                gameState.roomUnsubscribe = null;
+            }
+            gameState.roomCode = null;
+            gameState.matchStartedInRoom = false;
+            switchScreen("screen-home");
+        };
+
+        // ==========================================
+        // 7. HOME SCREEN & MODE HANDLERS
+        // ==========================================
+        window.selectAIDifficulty = function(diff) {
+            gameState.aiDifficulty = diff;
+            document.querySelectorAll(".diff-btn").forEach(btn => {
+                const isSelected = btn.dataset.diff === diff;
+                btn.className = isSelected
+                    ? "diff-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-500/10 transition"
+                    : "diff-btn py-2.5 px-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-emerald-400 transition";
+            });
+        };
+
+        window.startAIMode = function() {
+            gameState.mode = "ai";
+            gameState.squad = Array(11).fill(null);
+            gameState.selectedSlotIndex = null;
+            gameState.formation = "4-3-3";
+            gameState.maxBudget = DEFAULT_BUDGET;
+            gameState.lineFilter = "ALL";
+
+            const diffNames = { rookie: "ИИ: Новичок (€400M)", pro: "ИИ: Профи (€650M)", legend: "ИИ: Легенда (€850M)" };
+            document.getElementById("header-mode-text").textContent = diffNames[gameState.aiDifficulty];
+            document.getElementById("online-room-banner").classList.add("hidden");
+            document.getElementById("confirm-squad-btn").textContent = "НАЧАТЬ МАТЧ ⚽";
+            document.getElementById("confirm-squad-btn").disabled = false;
+
+            initDraftScreen();
+            switchScreen("screen-draft");
+        };
+
+        // ==========================================
+        // 8. ONLINE 1v1 MULTIPLAYER (FIRESTORE)
+        // ==========================================
+        function getPlayerNickname() {
+            const val = document.getElementById("player-nickname-input").value.trim();
+            return val || `Тренер #${Math.floor(100 + Math.random() * 899)}`;
+        }
+
+        window.createOnlineRoom = async function() {
+            if (!db || !currentUser) {
+                showToast("Онлайн-сервер подключается, попробуй через пару секунд...", "error");
+                return;
+            }
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            const nickname = getPlayerNickname();
+
+            gameState.mode = "online";
+            gameState.playerRole = "host";
+            gameState.roomCode = code;
+            gameState.playerName = nickname;
+            gameState.squad = Array(11).fill(null);
+            gameState.maxBudget = DEFAULT_BUDGET;
+            gameState.selectedSlotIndex = null;
+            gameState.matchStartedInRoom = false;
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'jonifoot_rooms', code);
+            try {
+                await setDoc(roomRef, {
+                    code,
+                    createdAt: Date.now(),
+                    host: {
+                        uid: currentUser.uid,
+                        name: nickname,
+                        ready: false,
+                        formation: "4-3-3",
+                        squadIds: []
+                    },
+                    guest: null
+                });
+
+                enterOnlineDraft(code);
+                showToast(`Комната #${code} создана! Поделись кодом с другом.`, "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Ошибка создания комнаты. Проверь интернет.", "error");
+            }
+        };
+
+        window.joinOnlineRoom = async function() {
+            if (!db || !currentUser) {
+                showToast("Онлайн-сервер подключается, подожди секунду...", "error");
+                return;
+            }
+            const code = document.getElementById("join-room-code-input").value.trim();
+            if (!/^\d{4}$/.test(code)) {
+                showToast("Введи корректный 4-значный код комнаты!", "error");
+                return;
+            }
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'jonifoot_rooms', code);
+            try {
+                const snap = await getDoc(roomRef);
+                if (!snap.exists()) {
+                    showToast(`Комната #${code} не найдена!`, "error");
+                    return;
+                }
+                const data = snap.data();
+                if (data.guest && data.guest.uid !== currentUser.uid) {
+                    showToast("В этой комнате уже играют два тренера!", "error");
+                    return;
+                }
+
+                const nickname = getPlayerNickname();
+                gameState.mode = "online";
+                gameState.playerRole = "guest";
+                gameState.roomCode = code;
+                gameState.playerName = nickname;
+                gameState.squad = Array(11).fill(null);
+                gameState.maxBudget = DEFAULT_BUDGET;
+                gameState.selectedSlotIndex = null;
+                gameState.matchStartedInRoom = false;
+
+                await updateDoc(roomRef, {
+                    guest: {
+                        uid: currentUser.uid,
+                        name: nickname,
+                        ready: false,
+                        formation: "4-3-3",
+                        squadIds: []
+                    }
+                });
+
+                enterOnlineDraft(code);
+                showToast(`Ты вошел в комнату #${code}!`, "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Не удалось подключиться к комнате.", "error");
+            }
+        };
+
+        function enterOnlineDraft(code) {
+            document.getElementById("header-mode-text").textContent = `Онлайн #${code}`;
+            document.getElementById("online-room-banner").classList.remove("hidden");
+            document.getElementById("room-code-display").textContent = code;
+            document.getElementById("my-ready-badge").textContent = "Твой статус: Сбор состава";
+            document.getElementById("confirm-squad-btn").textContent = "ГОТОВ К МАТЧУ ✅";
+            document.getElementById("confirm-squad-btn").disabled = false;
+
+            initDraftScreen();
+            switchScreen("screen-draft");
+            listenToOnlineRoom(code);
+        }
+
+        function listenToOnlineRoom(code) {
+            if (gameState.roomUnsubscribe) gameState.roomUnsubscribe();
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'jonifoot_rooms', code);
+
+            gameState.roomUnsubscribe = onSnapshot(roomRef, (snap) => {
+                if (!snap.exists()) return;
+                const data = snap.data();
+                const isHost = gameState.playerRole === "host";
+                const opponent = isHost ? data.guest : data.host;
+                const me = isHost ? data.host : data.guest;
+
+                const oppStatusEl = document.getElementById("opponent-status-display");
+                if (!opponent) {
+                    oppStatusEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span> Ожидание подключения второго игрока...`;
+                } else if (!opponent.ready) {
+                    oppStatusEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span> ${opponent.name} собирает состав (${opponent.formation})...`;
+                } else {
+                    oppStatusEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> ${opponent.name} ГОТОВ К БОЮ! 🔥`;
+                }
+
+                // If both players are ready, start synchronized match!
+                if (me?.ready && opponent?.ready && !gameState.matchStartedInRoom) {
+                    gameState.matchStartedInRoom = true;
+                    const oppSquad = opponent.squadIds.map(id => PLAYERS_DB.find(p => p.id === id) || PLAYERS_DB[0]);
+                    launchMatchSimulation(
+                        { name: me.name, formation: me.formation, squad: gameState.squad, maxBudget: DEFAULT_BUDGET },
+                        { name: opponent.name, formation: opponent.formation, squad: oppSquad, maxBudget: DEFAULT_BUDGET },
+                        `${code}_${data.createdAt}`
+                    );
+                }
+            }, (error) => {
+                console.error("Room listener error:", error);
+            });
+        }
+
+        window.copyRoomCode = function() {
+            const code = gameState.roomCode;
+            if (!code) return;
+            const tempInput = document.createElement("input");
+            tempInput.value = code;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            showToast(`Код #${code} скопирован в буфер обмена!`, "success");
+        };
+
+        // ==========================================
+        // 9. DRAFT BUILDER LOGIC (PITCH & POOL)
+        // ==========================================
+        function initDraftScreen() {
+            renderFormationButtons();
+            renderPitchSlots();
+            setLineFilter("ALL");
+            updateSquadStats();
+        }
+
+        function renderFormationButtons() {
+            const container = document.getElementById("formation-buttons");
+            container.innerHTML = Object.keys(FORMATIONS).map(key => {
+                const active = gameState.formation === key;
+                return `
+                    <button onclick="changeFormation('${key}')" class="px-3 py-1.5 rounded-xl text-xs font-display font-bold transition ${
+                        active 
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30" 
+                        : "bg-slate-800/90 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                    }">
+                        ${key}
+                    </button>
+                `;
+            }).join("");
+        }
+
+        window.changeFormation = function(newForm) {
+            gameState.formation = newForm;
+            renderFormationButtons();
+            renderPitchSlots();
+            updateSquadStats();
+            playSound("pick");
+        };
+
+        function getCardTierClass(ovr) {
+            if (ovr >= 90) return "tier-icon";
+            if (ovr >= 85) return "tier-elite";
+            return "tier-rare";
+        }
+
+        function renderPitchSlots(flashIndex = -1) {
+            const layer = document.getElementById("pitch-slots-layer");
+            const slots = FORMATIONS[gameState.formation].slots;
+
+            layer.innerHTML = slots.map((slot, idx) => {
+                const player = gameState.squad[idx];
+                const isSelected = gameState.selectedSlotIndex === idx;
+
+                if (!player) {
+                    return `
+                        <div 
+                            style="left: ${slot.x}%; top: ${slot.y}%; transform: translate(-50%, -50%);"
+                            onclick="handleSlotClick(${idx})"
+                            ondragover="handleDragOver(event, ${idx})"
+                            ondragleave="handleDragLeave(event, ${idx})"
+                            ondrop="handleDropOnSlot(event, ${idx})"
+                            id="pitch-slot-${idx}"
+                            class="pitch-slot absolute w-16 sm:w-20 h-20 sm:h-24 rounded-2xl border-2 border-dashed ${isSelected ? 'border-cyan-400 bg-cyan-500/20 selected-slot' : 'border-emerald-300/40 bg-slate-950/60 hover:border-emerald-300'} flex flex-col items-center justify-center cursor-pointer backdrop-blur-sm"
+                        >
+                            <span class="text-emerald-300/70 text-lg font-bold">+</span>
+                            <span class="font-display text-[11px] sm:text-xs font-extrabold text-emerald-200">${slot.pos}</span>
+                        </div>
+                    `;
+                }
+
+                const chem = getPositionCompatibility(player.pos, slot.pos);
+                const chemClass = chem.status === "perfect" ? "chem-perfect" : chem.status === "partial" ? "chem-partial" : "chem-out";
+                const tierClass = getCardTierClass(player.ovr);
+                const shortName = player.name.split(" ").pop();
+
+                return `
+                    <div 
+                        style="left: ${slot.x}%; top: ${slot.y}%; transform: translate(-50%, -50%);"
+                        onclick="handleSlotClick(${idx})"
+                        ondragover="handleDragOver(event, ${idx})"
+                        ondragleave="handleDragLeave(event, ${idx})"
+                        ondrop="handleDropOnSlot(event, ${idx})"
+                        id="pitch-slot-${idx}"
+                        class="pitch-slot absolute w-[70px] sm:w-[86px] rounded-xl p-1.5 ${tierClass} ${chemClass} ${isSelected ? 'selected-slot' : ''} ${flashIndex === idx ? 'animate-flash' : ''} cursor-pointer shadow-xl flex flex-col items-center text-center"
+                    >
+                        <div class="w-full flex items-center justify-between text-[10px] sm:text-[11px] font-black leading-none mb-0.5">
+                            <span class="ovr-badge font-display">${player.ovr}</span>
+                            <span class="px-1 py-0.5 rounded bg-amber-500/25 text-amber-200 text-[9px] font-bold">€${player.price}M</span>
+                        </div>
+                        <div class="text-sm sm:text-base my-0.5 leading-none">${player.flag}</div>
+                        <div class="w-full text-[10px] sm:text-[11px] font-extrabold text-white truncate leading-tight">
+                            ${shortName}
+                        </div>
+                        <div class="mt-0.5 text-[9px] font-bold px-1.5 rounded-full ${
+                            chem.status === 'perfect' ? 'bg-emerald-500/30 text-emerald-200' :
+                            chem.status === 'partial' ? 'bg-amber-500/30 text-amber-200' :
+                            'bg-rose-500/30 text-rose-200'
+                        }">
+                            ${player.pos}→${slot.pos} (${chem.label})
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        window.handleSlotClick = function(idx) {
+            if (gameState.selectedSlotIndex === idx) {
+                if (gameState.squad[idx]) {
+                    const removed = gameState.squad[idx];
+                    gameState.squad[idx] = null;
+                    showToast(`${removed.name} продан (+€${removed.price}M в бюджет)`, "info");
+                }
+                gameState.selectedSlotIndex = null;
+                document.getElementById("active-slot-hint").textContent = "Кликни слот или перетащи";
+            } else if (gameState.selectedSlotIndex !== null && gameState.squad[gameState.selectedSlotIndex] && gameState.squad[idx]) {
+                // Swap two players on pitch
+                const temp = gameState.squad[idx];
+                gameState.squad[idx] = gameState.squad[gameState.selectedSlotIndex];
+                gameState.squad[gameState.selectedSlotIndex] = temp;
+                gameState.selectedSlotIndex = null;
+                document.getElementById("active-slot-hint").textContent = "Кликни слот или перетащи";
+                playSound("pick");
+            } else {
+                gameState.selectedSlotIndex = idx;
+                const slotPos = FORMATIONS[gameState.formation].slots[idx].pos;
+                document.getElementById("active-slot-hint").textContent = `Выбран слот: ${slotPos} (кликни игрока)`;
+                const line = getLineCategory(slotPos);
+                setLineFilter(line);
+            }
+            renderPitchSlots();
+            renderPlayerPool();
+            updateSquadStats();
+        };
+
+        // Drag and Drop Handlers
+        let draggedPlayerId = null;
+
+        window.handlePlayerDragStart = function(event, playerId) {
+            draggedPlayerId = playerId;
+            event.dataTransfer.setData("text/plain", playerId);
+        };
+
+        window.handleDragOver = function(event, slotIdx) {
+            event.preventDefault();
+            document.getElementById(`pitch-slot-${slotIdx}`)?.classList.add("drag-over");
+        };
+
+        window.handleDragLeave = function(event, slotIdx) {
+            document.getElementById(`pitch-slot-${slotIdx}`)?.classList.remove("drag-over");
+        };
+
+        window.handleDropOnSlot = function(event, slotIdx) {
+            event.preventDefault();
+            document.getElementById(`pitch-slot-${slotIdx}`)?.classList.remove("drag-over");
+            const pId = Number(event.dataTransfer.getData("text/plain") || draggedPlayerId);
+            if (pId) assignPlayerToSlot(pId, slotIdx);
+        };
+
+        window.assignPlayerToSlot = function(playerId, targetSlotIdx = null) {
+            const player = PLAYERS_DB.find(p => p.id === playerId);
+            if (!player) return;
+
+            const existingIdx = gameState.squad.findIndex(p => p && p.id === playerId);
+            if (existingIdx !== -1) {
+                showToast(`${player.name} уже в твоем составе!`, "error");
+                return;
+            }
+
+            let slotIdx = targetSlotIdx !== null ? targetSlotIdx : gameState.selectedSlotIndex;
+
+            if (slotIdx === null) {
+                const slots = FORMATIONS[gameState.formation].slots;
+                slotIdx = slots.findIndex((s, i) => !gameState.squad[i] && s.pos === player.pos);
+                if (slotIdx === -1) {
+                    slotIdx = slots.findIndex((s, i) => !gameState.squad[i] && ADJACENT_POSITIONS[s.pos]?.includes(player.pos));
+                }
+                if (slotIdx === -1) {
+                    slotIdx = gameState.squad.findIndex(s => s === null);
+                }
+            }
+
+            if (slotIdx === -1 || slotIdx === null) {
+                showToast("Состав полон (11/11)! Нажми на игрока на поле, чтобы заменить.", "error");
+                return;
+            }
+
+            // Budget check (refunding replaced player if slot was occupied)
+            const replacedPlayer = gameState.squad[slotIdx];
+            const refund = replacedPlayer ? replacedPlayer.price : 0;
+            const availableAfterRefund = getRemainingBudget() + refund;
+
+            if (player.price > availableAfterRefund) {
+                const budgetBox = document.getElementById("budget-box");
+                budgetBox.classList.add("border-rose-500", "bg-rose-950/50", "scale-105");
+                setTimeout(() => budgetBox.classList.remove("border-rose-500", "bg-rose-950/50", "scale-105"), 550);
+
+                showToast(`Недостаточно бюджета! Нужно €${player.price}M, доступно €${availableAfterRefund}M`, "error");
+                return;
+            }
+
+            gameState.squad[slotIdx] = player;
+            gameState.selectedSlotIndex = null;
+            document.getElementById("active-slot-hint").textContent = "Кликни слот или перетащи";
+
+            if (player.ovr >= 90) {
+                playSound("pick-gold");
+                showToast(`⭐ Топ-трансфер: ${player.name} (${player.ovr}) за €${player.price}M!`, "gold");
+            } else {
+                playSound("pick");
+            }
+
+            renderPitchSlots(slotIdx);
+            renderPlayerPool();
+            updateSquadStats();
+        };
+
+        // Filter & Render Players List
+        window.setLineFilter = function(line) {
+            gameState.lineFilter = line;
+            document.querySelectorAll(".line-filter-btn").forEach(btn => {
+                const active = btn.dataset.line === line;
+                btn.className = active
+                    ? "line-filter-btn py-1.5 rounded-lg text-xs font-bold bg-emerald-500/25 border border-emerald-400 text-emerald-300 transition"
+                    : "line-filter-btn py-1.5 rounded-lg text-xs font-bold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-slate-500 transition";
+            });
+            renderPlayerPool();
+        };
+
+        window.renderPlayerPool = function() {
+            const search = document.getElementById("player-search").value.toLowerCase().trim();
+            const sortBy = document.getElementById("player-sort").value;
+            const usedIds = new Set(gameState.squad.filter(Boolean).map(p => p.id));
+
+            let filtered = PLAYERS_DB.filter(p => {
+                if (gameState.lineFilter !== "ALL" && getLineCategory(p.pos) !== gameState.lineFilter) return false;
+                if (search && !p.name.toLowerCase().includes(search) && !p.club.toLowerCase().includes(search)) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortBy === "ovr-desc") return b.ovr - a.ovr;
+                if (sortBy === "ovr-asc") return a.ovr - b.ovr;
+                if (sortBy === "price-asc") return a.price - b.price;
+                if (sortBy === "price-desc") return b.price - a.price;
+                if (sortBy === "pac-desc") return b.stats.pac - a.stats.pac;
+                if (sortBy === "sho-desc") return b.stats.sho - a.stats.sho;
+                return 0;
+            });
+
+            document.getElementById("pool-count-badge").textContent = filtered.length;
+            const remainingBudget = getRemainingBudget();
+
+            const listEl = document.getElementById("player-pool-list");
+            listEl.innerHTML = filtered.map(p => {
+                const isUsed = usedIds.has(p.id);
+                const tooExpensive = !isUsed && p.price > remainingBudget;
+                const tierClass = getCardTierClass(p.ovr);
+
+                return `
+                    <div 
+                        draggable="${!isUsed}"
+                        ondragstart="handlePlayerDragStart(event, ${p.id})"
+                        onclick="${isUsed ? '' : `assignPlayerToSlot(${p.id})`}"
+                        class="glass-card rounded-2xl p-2.5 flex items-center justify-between gap-2.5 ${tierClass} ${isUsed ? 'opacity-35 cursor-not-allowed' : tooExpensive ? 'opacity-65 cursor-pointer' : 'cursor-pointer'}"
+                    >
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 rounded-xl bg-black/40 border border-white/10 flex flex-col items-center justify-center shrink-0">
+                                <span class="ovr-badge font-display text-sm font-black leading-none">${p.ovr}</span>
+                                <span class="text-[10px] font-bold text-slate-300 mt-0.5">${p.pos}</span>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1.5">
+                                    <span>${p.flag}</span>
+                                    <span class="truncate">${p.name}</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-[11px] text-slate-400 truncate">
+                                    <span class="font-display font-bold ${tooExpensive ? 'text-rose-400' : 'text-amber-300'}">€${p.price}M</span>
+                                    <span>•</span>
+                                    <span class="truncate">${p.club}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0 text-[10px] font-semibold text-slate-300">
+                            <div class="hidden sm:grid grid-cols-2 gap-x-2 gap-y-0.5 bg-black/35 px-2 py-1 rounded-lg">
+                                <span>PAC <b class="text-white">${p.stats.pac}</b></span>
+                                <span>SHO <b class="text-white">${p.stats.sho}</b></span>
+                                <span>PAS <b class="text-white">${p.stats.pas}</b></span>
+                                <span>DEF <b class="text-white">${p.stats.def}</b></span>
+                            </div>
+                            <span class="px-2 py-1 rounded-lg font-bold ${
+                                isUsed 
+                                ? 'bg-slate-800 text-slate-500' 
+                                : tooExpensive 
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' 
+                                : 'bg-emerald-500/20 text-emerald-300'
+                            }">
+                                ${isUsed ? 'В составе' : tooExpensive ? `€${p.price}M` : `+ €${p.price}M`}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        };
+
+        // Calculate Team Power, Chemistry, Spent Budget & Average OVR
+        function calculateTeamMetrics(squad, formationKey) {
+            const slots = FORMATIONS[formationKey].slots;
+            let count = 0;
+            let rawOvrSum = 0;
+            let effectivePowerSum = 0;
+            let chemSum = 0;
+            let spentBudget = 0;
+
+            squad.forEach((player, idx) => {
+                if (!player) return;
+                count++;
+                rawOvrSum += player.ovr;
+                spentBudget += player.price;
+                const compat = getPositionCompatibility(player.pos, slots[idx].pos);
+                chemSum += compat.mult * 100;
+                effectivePowerSum += player.ovr * compat.mult;
+            });
+
+            const avgOvr = count > 0 ? Math.round(rawOvrSum / count) : 0;
+            const avgChem = count > 0 ? Math.round(chemSum / count) : 0;
+            const totalPower = count > 0 ? Math.round((effectivePowerSum / 11) * 10) / 10 : 0;
+
+            return { count, avgOvr, avgChem, totalPower, spentBudget };
+        }
+
+        function updateSquadStats() {
+            const metrics = calculateTeamMetrics(gameState.squad, gameState.formation);
+            const left = gameState.maxBudget - metrics.spentBudget;
+            const pct = Math.min(100, Math.round((metrics.spentBudget / gameState.maxBudget) * 100));
+
+            document.getElementById("stat-count").textContent = `${metrics.count} / 11`;
+            document.getElementById("stat-ovr").textContent = metrics.avgOvr;
+            document.getElementById("stat-chem").textContent = `${metrics.avgChem}%`;
+            document.getElementById("stat-power").textContent = metrics.totalPower;
+
+            document.getElementById("stat-budget-total").textContent = `/ €${gameState.maxBudget}M`;
+            document.getElementById("stat-budget-left").textContent = `€${left}M`;
+            document.getElementById("stat-budget-spent").textContent = `потрачено €${metrics.spentBudget}M`;
+            document.getElementById("budget-progress-bar").style.width = `${pct}%`;
+
+            const leftEl = document.getElementById("stat-budget-left");
+            if (left < 25) {
+                leftEl.className = "font-display text-sm sm:text-base font-black text-rose-400";
+            } else if (left < 120) {
+                leftEl.className = "font-display text-sm sm:text-base font-black text-amber-300";
+            } else {
+                leftEl.className = "font-display text-sm sm:text-base font-black text-emerald-400";
+            }
+        }
+
+        window.autoFillSquad = function() {
+            const slots = FORMATIONS[gameState.formation].slots;
+            const usedIds = new Set(gameState.squad.filter(Boolean).map(p => p.id));
+
+            const emptyIndices = slots.map((_, i) => i).filter(i => !gameState.squad[i]);
+            if (emptyIndices.length === 0) {
+                showToast("Все 11 позиций уже заполнены!", "info");
+                return;
+            }
+
+            const shuffledOrder = [...emptyIndices].sort(() => Math.random() - 0.5);
+            const MIN_RESERVE_PER_PLAYER = 10;
+
+            shuffledOrder.forEach((slotIdx, stepIdx) => {
+                const slot = slots[slotIdx];
+                const remainingSlotsAfterThis = shuffledOrder.length - stepIdx - 1;
+                const currentLeft = getRemainingBudget();
+                const maxAffordableForSlot = currentLeft - (remainingSlotsAfterThis * MIN_RESERVE_PER_PLAYER);
+
+                let candidates = PLAYERS_DB.filter(p => !usedIds.has(p.id) && p.pos === slot.pos && p.price <= maxAffordableForSlot);
+                if (candidates.length === 0) {
+                    candidates = PLAYERS_DB.filter(p => !usedIds.has(p.id) && ADJACENT_POSITIONS[slot.pos]?.includes(p.pos) && p.price <= maxAffordableForSlot);
+                }
+                if (candidates.length === 0) {
+                    candidates = PLAYERS_DB.filter(p => !usedIds.has(p.id) && p.price <= maxAffordableForSlot);
+                }
+                if (candidates.length === 0) {
+                    candidates = PLAYERS_DB.filter(p => !usedIds.has(p.id)).sort((a, b) => a.price - b.price);
+                } else {
+                    candidates.sort((a, b) => b.ovr - a.ovr);
+                    candidates = candidates.slice(0, 5);
+                }
+
+                const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                if (pick && pick.price <= getRemainingBudget()) {
+                    gameState.squad[slotIdx] = pick;
+                    usedIds.add(pick.id);
+                }
+            });
+
+            playSound("pick-gold");
+            renderPitchSlots();
+            renderPlayerPool();
+            updateSquadStats();
+            showToast(`Состав собран в рамках бюджета (остаток €${getRemainingBudget()}M)!`, "success");
+        };
+
+        window.clearSquad = function() {
+            gameState.squad = Array(11).fill(null);
+            gameState.selectedSlotIndex = null;
+            renderPitchSlots();
+            renderPlayerPool();
+            updateSquadStats();
+            showToast("Поле очищено", "info");
+        };
+
+        // ==========================================
+        // 10. AI OPPONENT GENERATOR & MATCH ENGINE
+        // ==========================================
+        function generateAISquad(difficulty, userFormation) {
+            const counterMap = {
+                "4-3-3": "3-5-2",
+                "4-4-2": "4-3-3",
+                "3-5-2": "4-4-2",
+                "4-2-3-1": "4-3-3",
+                "5-3-2": "4-2-3-1"
+            };
+            const allForms = Object.keys(FORMATIONS);
+            const aiFormation = difficulty === "legend" 
+                ? counterMap[userFormation] 
+                : allForms[Math.floor(Math.random() * allForms.length)];
+
+            const aiBudgets = {
+                rookie: 400,
+                pro: 650,
+                legend: 850
+            };
+            const aiMaxBudget = aiBudgets[difficulty] || 650;
+            let aiRemaining = aiMaxBudget;
+            const usedAiIds = new Set();
+            const slots = FORMATIONS[aiFormation].slots;
+            const aiSquad = Array(11).fill(null);
+
+            const order = slots.map((_, i) => i).sort(() => Math.random() - 0.5);
+            order.forEach((slotIdx, stepIdx) => {
+                const slot = slots[slotIdx];
+                const slotsLeftAfter = order.length - stepIdx - 1;
+                const maxAllowed = aiRemaining - (slotsLeftAfter * 10);
+
+                let pool = PLAYERS_DB.filter(p => !usedAiIds.has(p.id) && p.pos === slot.pos && p.price <= maxAllowed);
+                if (pool.length === 0) {
+                    pool = PLAYERS_DB.filter(p => !usedAiIds.has(p.id) && ADJACENT_POSITIONS[slot.pos]?.includes(p.pos) && p.price <= maxAllowed);
+                }
+                if (pool.length === 0) {
+                    pool = PLAYERS_DB.filter(p => !usedAiIds.has(p.id)).sort((a, b) => a.price - b.price);
+                } else {
+                    pool.sort((a, b) => b.ovr - a.ovr);
+                    pool = pool.slice(0, 6);
+                }
+
+                const chosen = pool[Math.floor(Math.random() * pool.length)] || PLAYERS_DB[PLAYERS_DB.length - 1];
+                usedAiIds.add(chosen.id);
+                aiSquad[slotIdx] = chosen;
+                aiRemaining -= chosen.price;
+            });
+
+            const names = { rookie: "ИИ Новичок", pro: "ИИ Профи", legend: "ИИ Легенда" };
+            return { name: names[difficulty], formation: aiFormation, squad: aiSquad, maxBudget: aiMaxBudget };
+        }
+
+        function getTacticalBonus(formA, formB) {
+            if (formA === "4-3-3" && formB === "4-4-2") return { bonus: 5, reason: "Фланги 4-3-3 вскрывают 4-4-2 (+5%)" };
+            if (formA === "4-4-2" && formB === "3-5-2") return { bonus: 5, reason: "Ширина 4-4-2 давит на 3-5-2 (+5%)" };
+            if (formA === "3-5-2" && formB === "4-3-3") return { bonus: 5, reason: "Кулак в центре 3-5-2 душит 4-3-3 (+5%)" };
+            if (formA === "4-2-3-1" && formB === "3-5-2") return { bonus: 3, reason: "Контроль опорной зоны (+3%)" };
+            if (formA === "5-3-2" && formB === "4-3-3") return { bonus: 3, reason: "Плотный блок против атаки (+3%)" };
+            return { bonus: 0, reason: "" };
+        }
+
+        window.confirmAndStartMatch = async function() {
+            const filledCount = gameState.squad.filter(Boolean).length;
+            if (filledCount < 11) {
+                showToast(`Сначала выбери всех 11 игроков! Сейчас: ${filledCount}/11`, "error");
+                return;
+            }
+
+            if (gameState.mode === "ai") {
+                const aiTeam = generateAISquad(gameState.aiDifficulty, gameState.formation);
+                launchMatchSimulation(
+                    { name: "Твоя команда", formation: gameState.formation, squad: gameState.squad, maxBudget: gameState.maxBudget },
+                    aiTeam,
+                    Date.now().toString()
+                );
+            } else if (gameState.mode === "online") {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'jonifoot_rooms', gameState.roomCode);
+                const fieldKey = gameState.playerRole === "host" ? "host" : "guest";
+                const squadIds = gameState.squad.map(p => p.id);
+
+                document.getElementById("confirm-squad-btn").disabled = true;
+                document.getElementById("confirm-squad-btn").textContent = "ОЖИДАНИЕ СОПЕРНИКА...";
+                document.getElementById("my-ready-badge").textContent = "Твой статус: ГОТОВ ✅";
+                document.getElementById("my-ready-badge").className = "px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400 text-xs font-bold text-emerald-300";
+
+                await updateDoc(roomRef, {
+                    [`${fieldKey}.ready`]: true,
+                    [`${fieldKey}.formation`]: gameState.formation,
+                    [`${fieldKey}.squadIds`]: squadIds
+                });
+                showToast("Ты подтвердил состав! Ждем соперника...", "success");
+            }
+        };
+
+        function createSeededRandom(seedStr) {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < seedStr.length; i++) {
+                h ^= seedStr.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return function() {
+                h += h << 13; h ^= h >>> 7;
+                h += h << 3; h ^= h >>> 17;
+                h += h << 5;
+                return (h >>> 0) / 4294967296;
+            };
+        }
+
+        let simulationInterval = null;
+
+        function launchMatchSimulation(team1, team2, seed) {
+            if (simulationInterval) clearInterval(simulationInterval);
+            switchScreen("screen-match");
+            playSound("whistle");
+
+            const m1 = calculateTeamMetrics(team1.squad, team1.formation);
+            const m2 = calculateTeamMetrics(team2.squad, team2.formation);
+
+            const tac1 = getTacticalBonus(team1.formation, team2.formation);
+            const tac2 = getTacticalBonus(team2.formation, team1.formation);
+
+            const score1 = Math.pow(m1.totalPower, 2.4) * (1 + tac1.bonus / 100);
+            const score2 = Math.pow(m2.totalPower, 2.4) * (1 + tac2.bonus / 100);
+
+            const p1WinChance = Math.min(92, Math.max(8, Math.round((score1 / (score1 + score2)) * 100)));
+            const p2WinChance = 100 - p1WinChance;
+
+            document.getElementById("match-p1-name").textContent = team1.name;
+            document.getElementById("match-p1-form").textContent = team1.formation;
+            document.getElementById("match-p1-power").textContent = m1.totalPower;
+            document.getElementById("match-p1-budget").textContent = `€${m1.spentBudget}M / €${team1.maxBudget || DEFAULT_BUDGET}M`;
+            document.getElementById("match-p1-bonus").textContent = tac1.reason;
+
+            document.getElementById("match-p2-name").textContent = team2.name;
+            document.getElementById("match-p2-form").textContent = team2.formation;
+            document.getElementById("match-p2-power").textContent = m2.totalPower;
+            document.getElementById("match-p2-budget").textContent = `€${m2.spentBudget}M / €${team2.maxBudget || DEFAULT_BUDGET}M`;
+            document.getElementById("match-p2-bonus").textContent = tac2.reason;
+
+            document.getElementById("p1-win-percent").textContent = `${p1WinChance}%`;
+            document.getElementById("p2-win-percent").textContent = `${p2WinChance}%`;
+            document.getElementById("p1-win-bar").style.width = `${p1WinChance}%`;
+            document.getElementById("p2-win-bar").style.width = `${p2WinChance}%`;
+
+            document.getElementById("compare-p1-list").innerHTML = team1.squad.map(p => `
+                <div class="flex items-center justify-between bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-800">
+                    <span class="truncate text-slate-200 font-medium">${p.flag} ${p.name}</span>
+                    <span class="font-display font-bold text-emerald-400 ml-1 shrink-0">${p.ovr} <span class="text-[10px] text-amber-300">€${p.price}M</span></span>
+                </div>
+            `).join("");
+
+            document.getElementById("compare-p2-list").innerHTML = team2.squad.map(p => `
+                <div class="flex items-center justify-between bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-800">
+                    <span class="truncate text-slate-200 font-medium">${p.flag} ${p.name}</span>
+                    <span class="font-display font-bold text-purple-400 ml-1 shrink-0">${p.ovr} <span class="text-[10px] text-amber-300">€${p.price}M</span></span>
+                </div>
+            `).join("");
+
+            const rand = createSeededRandom(seed);
+            const roll = rand() * 100;
+            const p1Wins = roll < p1WinChance;
+
+            let goals1 = 0;
+            let goals2 = 0;
+            if (p1Wins) {
+                goals1 = 1 + Math.floor(rand() * 3);
+                goals2 = Math.floor(rand() * goals1);
+            } else {
+                goals2 = 1 + Math.floor(rand() * 3);
+                goals1 = Math.floor(rand() * goals2);
+            }
+
+            const pickScorer = (squad) => {
+                const attackers = squad.filter(p => ["ST", "LW", "RW", "CAM", "CM"].includes(p.pos));
+                const pool = attackers.length ? attackers : squad;
+                return pool[Math.floor(rand() * pool.length)];
+            };
+
+            const events = [];
+            events.push({ min: 1, type: "info", text: `Стартовый свисток на JoniFoot Arena! ${team1.name} (${team1.formation}) против ${team2.name} (${team2.formation}).` });
+
+            for (let i = 0; i < goals1; i++) {
+                const min = 8 + Math.floor(rand() * 80);
+                const scorer = pickScorer(team1.squad);
+                events.push({
+                    min,
+                    type: "goal-p1",
+                    text: `⚽ ГООООЛ! ${scorer.name} (${team1.name}) мастерски реализует момент после быстрой комбинации!`
+                });
+            }
+
+            for (let i = 0; i < goals2; i++) {
+                const min = 8 + Math.floor(rand() * 80);
+                const scorer = pickScorer(team2.squad);
+                events.push({
+                    min,
+                    type: "goal-p2",
+                    text: `⚽ Гол забивает ${scorer.name} (${team2.name})! Мощный удар в дальний угол.`
+                });
+            }
+
+            const star1 = [...team1.squad].sort((a, b) => b.ovr - a.ovr)[0];
+            const star2 = [...team2.squad].sort((a, b) => b.ovr - a.ovr)[0];
+            events.push({ min: 27, type: "highlight", text: `🔥 Опасный момент! ${star1.name} прорывается по центру и сотрясает перекладину!` });
+            events.push({ min: 64, type: "highlight", text: `🛡️ Вратарь спасает после коварного удара, который нанес ${star2.name}!` });
+
+            events.sort((a, b) => a.min - b.min);
+            events.push({ min: 90, type: "end", text: `Финальный свисток! Матч завершен.` });
+
+            document.getElementById("score-p1").textContent = "0";
+            document.getElementById("score-p2").textContent = "0";
+            document.getElementById("match-clock").textContent = "0'";
+            document.getElementById("match-live-dot").classList.remove("hidden");
+            document.getElementById("match-final-banner").classList.add("hidden");
+            const logEl = document.getElementById("match-events-log");
+            logEl.innerHTML = "";
+
+            let step = 0;
+            let curG1 = 0;
+            let curG2 = 0;
+
+            simulationInterval = setInterval(() => {
+                if (step >= events.length) {
+                    clearInterval(simulationInterval);
+                    document.getElementById("match-live-dot").classList.add("hidden");
+                    showFinalResultBanner(p1Wins, team1.name, team2.name, goals1, goals2, p1WinChance);
+                    return;
+                }
+
+                const ev = events[step];
+                document.getElementById("match-clock").textContent = `${ev.min}'`;
+
+                if (ev.type === "goal-p1") {
+                    curG1++;
+                    document.getElementById("score-p1").textContent = curG1;
+                    playSound("goal");
+                } else if (ev.type === "goal-p2") {
+                    curG2++;
+                    document.getElementById("score-p2").textContent = curG2;
+                    playSound("goal");
+                }
+
+                const badgeStyle = ev.type === "goal-p1"
+                    ? "border-emerald-400/50 bg-emerald-500/15 text-emerald-200"
+                    : ev.type === "goal-p2"
+                    ? "border-purple-400/50 bg-purple-500/15 text-purple-200"
+                    : "border-slate-700/70 bg-slate-900/70 text-slate-300";
+
+                const item = document.createElement("div");
+                item.className = `p-3 rounded-xl border ${badgeStyle} flex items-start gap-2.5 transition-all`;
+                item.innerHTML = `
+                    <span class="font-display text-xs font-bold px-2 py-0.5 rounded bg-black/40 text-cyan-300 shrink-0">${ev.min}'</span>
+                    <span class="text-xs sm:text-sm leading-snug">${ev.text}</span>
+                `;
+                logEl.appendChild(item);
+                logEl.scrollTop = logEl.scrollHeight;
+
+                step++;
+            }, 650);
+        }
+
+        function showFinalResultBanner(p1Wins, name1, name2, g1, g2, winChance) {
+            const banner = document.getElementById("match-final-banner");
+            const title = document.getElementById("final-result-title");
+            const sub = document.getElementById("final-result-subtitle");
+
+            banner.classList.remove("hidden");
+            if (p1Wins) {
+                banner.className = "mt-5 p-5 rounded-2xl text-center border border-emerald-400/60 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-cyan-950/80";
+                title.className = "font-display text-2xl sm:text-3xl font-black mb-1 text-emerald-400";
+                title.textContent = "🏆 ТВОЯ ПОБЕДА!";
+                sub.textContent = `${name1} обыгрывает ${name2} со счетом ${g1}:${g2} (предматчевый шанс был ${winChance}%).`;
+                playSound("pick-gold");
+            } else {
+                banner.className = "mt-5 p-5 rounded-2xl text-center border border-rose-500/50 bg-gradient-to-r from-rose-950/70 via-slate-900 to-purple-950/70";
+                title.className = "font-display text-2xl sm:text-3xl font-black mb-1 text-rose-400";
+                title.textContent = "ПОРАЖЕНИЕ В МАТЧЕ";
+                sub.textContent = `${name2} оказался сильнее со счетом ${g2}:${g1}. Попробуй усилить сыгранность или сменить схему!`;
+                playSound("whistle");
+            }
+        }
+
+        window.rematch = async function() {
+            if (gameState.mode === "ai") {
+                switchScreen("screen-draft");
+            } else if (gameState.mode === "online" && gameState.roomCode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'jonifoot_rooms', gameState.roomCode);
+                const fieldKey = gameState.playerRole === "host" ? "host" : "guest";
+                gameState.matchStartedInRoom = false;
+
+                await updateDoc(roomRef, {
+                    [`${fieldKey}.ready`]: false
+                });
+
+                document.getElementById("confirm-squad-btn").disabled = false;
+                document.getElementById("confirm-squad-btn").textContent = "ГОТОВ К МАТЧУ ✅";
+                document.getElementById("my-ready-badge").textContent = "Твой статус: Сбор состава";
+                document.getElementById("my-ready-badge").className = "px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-600 text-xs font-semibold text-slate-300";
+                switchScreen("screen-draft");
+            }
+        };
+    </script>
+</body>
+</html>
